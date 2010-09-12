@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QPushButton" name="btnPrev">
+      <property name="text">
+       <string>上一个</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="lblFilename">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="4">
+     <widget class="QPushButton" name="btnNext">
+      <property name="text">
+       <string>下一个</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QLineEdit" name="editCur"/>
+    </item>
+    <item row="0" column="3">
+     <widget class="QLabel" name="lblTotal">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0" colspan="5">
+     <widget class="QTabWidget" name="tabView">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tabSingleView">
+       <attribute name="title">
+        <string>Single</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="0">
+         <widget class="SinglePhotoView" name="graphicsView"/>
+        </item>
+        <item row="0" column="1">
+         <widget class="QFrame" name="frame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="0">
+            <widget class="QCheckBox" name="chkColor">
+             <property name="text">
+              <string>Color Image</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="chkUse">
+             <property name="text">
+              <string>Use this PTS</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QPushButton" name="btnSaveNext">
+             <property name="text">
+              <string>Save and Next</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabCmpView">
+       <attribute name="title">
+        <string>Compare</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="0" column="0">
+         <widget class="PhotoView" name="viewRef"/>
+        </item>
+        <item row="0" column="1">
+         <widget class="PhotoView" name="viewEdit"/>
+        </item>
+        <item row="1" column="1">
+         <widget class="QPushButton" name="btnCmpSaveNext">
+          <property name="text">
+           <string>Save and Next</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>600</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>文件</string>
+    </property>
+    <addaction name="actOpenFile"/>
+    <addaction name="actSaveFile"/>
+   </widget>
+   <addaction name="menu"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="actOpenFile">
+   <property name="text">
+    <string>打开</string>
+   </property>
+  </action>
+  <action name="actSaveFile">
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>SinglePhotoView</class>
+   <extends>QGraphicsView</extends>
+   <header>singlephotoview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PhotoView</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">photoview.h</header>
+   <slots>
+    <signal>selectedPointUpdated(int)</signal>
+    <slot>setMirrorPoint(int)</slot>
+   </slots>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>viewRef</sender>
+   <signal>selectedPointUpdated(int)</signal>
+   <receiver>viewEdit</receiver>
+   <slot>setMirrorPoint(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>230</x>
+     <y>165</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>404</x>
+     <y>167</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>viewEdit</sender>
+   <signal>selectedPointUpdated(int)</signal>
+   <receiver>viewRef</receiver>
+   <slot>setMirrorPoint(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>353</x>
+     <y>257</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>202</x>
+     <y>257</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
