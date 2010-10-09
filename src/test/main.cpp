@@ -33,12 +33,10 @@ void buildASMModel(ASMModel &asmModel,
                    string modelPath)
 {
     ModelFileAscii mf;
-//     asmModel.readTrainData((appRoot+"data/feret_shape/pts.list").c_str());
     asmModel.loadShapeInfo((shapeDef).c_str());
     asmModel.readTrainData((ptsList).c_str());
     asmModel.buildModel();
     
-//     imgRestoreTest(asmModel);
     mf.openFile(modelPath.c_str(),"wb");
     asmModel.saveToFile(mf);
     mf.closeFile();
@@ -106,56 +104,43 @@ int main(int argc, char *argv[])
         }
     }
     
-    
-    vector< string > args;
-    args.resize(argc);
-    for (int i=0;i<argc;i++)
-        args[i]=argv[i];
-    if (modelType=="asm"){
-        ASMModel asmModel;
-        if (action=="build"){
-//             buildASMModel(asmModel, "data/pts75.def", "data/feret_color/pts75.list",
-//                   "color_asm.model");
-            buildASMModel(asmModel, ptsDefFile, ptsListFile, modelFile);
+    ASMModel asmModel;
+    if (action=="build"){
+        buildASMModel(asmModel, ptsDefFile, ptsListFile, modelFile);
+    }
+    else{
+        readASMModel(asmModel, modelFile);
+        if (action=="view"){
+            asmModel.viewShapeModel();
+            cvWaitKey();
         }
-        else{
-            readASMModel(asmModel, modelFile);
-            if (action=="view"){
-                asmModel.viewShapeModel();
-                while ((char)cvWaitKey()!='a');
-            }
-            else if (action=="fit"){
-                Mat img, imgT;
-                vector< FitResult > fitResult;
-                cv::CascadeClassifier faceCascade;
-                faceCascade.load(faceCascadePath);
-                if (picPath == "c"){
-                    cv::VideoCapture capture;
-                    capture.open(0);
+        else if (action=="fit"){
+            Mat img, imgT;
+            vector< FitResult > fitResult;
+            cv::CascadeClassifier faceCascade;
+            faceCascade.load(faceCascadePath);
+            if (picPath == "c"){
+                cv::VideoCapture capture;
+                capture.open(0);
 //                     printf("Opened: %d\n", capture.isOpened());
-//                     int p=0;
-                    while ((char)cvWaitKey(5)!='s'){
-//                         if (p++ % 5 == 0)
-                        capture>>imgT;
-//                         printf("%d\n", p);
-//                     img = imgT.clone();
-                        cv::flip(imgT, img, 1);
+                while (cvWaitKey(5)==-1){
+                    capture>>imgT;
+                    cv::flip(imgT, img, 1);
 //                         imshow("img", img);
 //                         cvWaitKey();
-                        asmModel.fit(img, fitResult, faceCascade, true, verboseL);
-                        asmModel.showResult(img, fitResult);
-                    }
-                    img = imgT.clone();
+                    asmModel.fit(img, fitResult, faceCascade, true, verboseL);
+                    asmModel.showResult(img, fitResult);
                 }
-                else {
-                    img = cv::imread(picPath);
-                }
-                
-                imshow("img", img);
-                cvWaitKey();
+//                     img = imgT.clone();
+            }
+            else {
+                img = cv::imread(picPath);
                 asmModel.fit(img, fitResult, faceCascade, true, verboseL);
                 asmModel.showResult(img, fitResult);
+                cvWaitKey();
             }
+            
+//                 imshow("img", img);
         }
     }
     return 0;
