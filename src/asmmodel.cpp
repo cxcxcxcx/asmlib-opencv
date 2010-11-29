@@ -61,7 +61,7 @@ void ASMModel::buildLocalDiffStructure()
             for (j = 0; j<nTrain; j++){
                 Mat_<double> M;
                 M = datMat.col(j);
-                imageSet[j].getLocalStruct(i,localFeatureRad,l, myStep[i]).copyTo(M);
+                imageSet[j].getLocalStruct(i,localFeatureRad,l, myStep[j]).copyTo(M);
             }
             cv::calcCovarMatrix(datMat, *tCovar, *tMean,
                                 CV_COVAR_NORMAL|CV_COVAR_COLS);
