@@ -1,0 +1,11 @@
+PROJECT( img-annotator )
+
+FIND_PACKAGE(Qt4 REQUIRED)
+FIND_PACKAGE(OpenCV REQUIRED)
+INCLUDE(${QT_USE_FILE})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+QT4_WRAP_CPP(annotator_MOCS mainwindow.h singlephotoview.h pointspaint.h photoview.h)
+QT4_WRAP_UI(annotator_UIS mainwindow.ui)
+ADD_EXECUTABLE(annotator main.cpp mainwindow.cpp singlephotoview.cpp pointspaint.cpp photoview.cpp ${annotator_MOCS} ${annotator_UIS})
+TARGET_LINK_LIBRARIES(annotator ${QT_LIBRARIES} ${OpenCV_LIBS})

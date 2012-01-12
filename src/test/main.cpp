@@ -36,7 +36,7 @@ void buildASMModel(ASMModel &asmModel,
     asmModel.loadShapeInfo((shapeDef).c_str());
     asmModel.readTrainData((ptsList).c_str());
     asmModel.buildModel();
-    
+
     mf.openFile(modelPath.c_str(),"wb");
     asmModel.saveToFile(mf);
     mf.closeFile();
@@ -51,6 +51,7 @@ void readASMModel(ASMModel &asmModel, string modelPath){
 
 int main(int argc, char *argv[])
 {
+		printf("How to run this?\n Please check: http://code.google.com/p/asmlib-opencv/wiki/RunningDemo\n");
     string modelFile, modelType, action;
     string ptsDefFile, ptsListFile, picPath;
     string faceCascadePath = "haarcascade_frontalface_alt.xml";
@@ -103,7 +104,7 @@ int main(int argc, char *argv[])
                 break;
         }
     }
-    
+
     ASMModel asmModel;
     if (action=="build"){
         buildASMModel(asmModel, ptsDefFile, ptsListFile, modelFile);
@@ -139,7 +140,7 @@ int main(int argc, char *argv[])
                 asmModel.showResult(img, fitResult);
                 cvWaitKey();
             }
-            
+
 //                 imshow("img", img);
         }
     }
