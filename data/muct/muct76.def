@@ -1,0 +1,25 @@
+#Number of Mark points
+76
+# number of paths
+1
+# face contour
+76 1
+
+#r.y -= r.height*?
+0.1
+#r.x -= r.width*?
+0.1
+#r.width *= ?
+1.2
+#r.height *= ?
+1.45
+
+#step?*100/sqrt(area)
+1.0
+
+# init scale ratio when searching
+0.65
+# init X offset when searching
+0
+# init Y offset when searching
+0.25
