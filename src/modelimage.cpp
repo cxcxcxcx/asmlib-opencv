@@ -4,69 +4,13 @@
 using std::cerr;
 
 namespace StatModel {
-  
+
+
 ModelImage::ModelImage()
 {
     //this->points.push_back(Point_<double>(1,1));
     imgLoaded = false;
     this->shapeInfo = NULL;
-}
-
-bool ModelImage::ReadAF(const char *filename)
-{
-    AFReader r(filename);
-
-    if ( !r.IsValid() ) {
-        return false;
-    }
-
-    int npoints, path_id, type, point_nb, from, to;
-    float x_rel, y_rel;
-
-    // read nb points
-    r.Sync();
-    fscanf( r.FH(), "%i", &npoints );
-    printf("Points: %d\n", npoints);
-
-    // resize this shape
-    this->points.resize(npoints);
-//    pointInfo.resize(npoints);
-    this->shapeVec.create(npoints * 2, 1);
-
-    // read all point data
-    r.Sync();
-    int nelem = 0;
-    float user1, user2, user3;
-    for(int i=0;i<npoints;i++) {
-        // read point data
-        // format: <path#> <type> <x rel.> <y rel.> <point#> <connects from> <connects to>
-        fscanf( r.FH(), "%i %i %f %f %i %i %i", &path_id, &type, &x_rel, &y_rel, &point_nb, &from, &to );
-
-        if ( r.MoreNonWhiteSpaceOnLine() ) {
-            nelem = fscanf( r.FH(), "%f %f %f", &user1, &user2, &user3 );
-        }
-
-        r.Sync();
-
-        // save point data
-        //SetPoint( i, x_rel, y_rel );
-        points[i].x = x_rel;
-        points[i].y = y_rel;
-        shapeVec(i, 0) = x_rel;
-        shapeVec(i+npoints, 0) = y_rel;
-    }
-
-    // read host image
-    r.Sync();
-    char buf[300]={0};
-    fscanf( r.FH(), "%s", buf );
-    puts(buf);
-    //this->hostImage = string(buf);
-//
-//    // we're now hold relative coordinates
-//    m_bAbsPointCoordinates = false;
-
-    return true;
 }
 
 bool ModelImage::readPTS( const char * filename )
@@ -333,17 +277,7 @@ Mat ModelImage::show(int l, int pId, bool showInWin, int highLight)
     else
         mb = imgPyramid[0].clone();
 
-    for (int i=0;i<nMarkPoints;i++){
-//         printf("%d\n", i);
-        cv::circle(mb, points[i], 3, cv::Scalar(25, 50, 255), 1, CV_AA);
-    }
-    for (int i=0;i<shapeInfo->nPath;i++){
-        for (int j=shapeInfo->pathSeg[i]; j<shapeInfo->pathSeg[i+1]; j++){
-            cv::line(mb, points[shapeInfo->pointInfo[j].connectFrom],
-                     points[j],
-                     cv::Scalar(200, 30, 80), 1, CV_AA);
-        }
-    }
+    shapeInfo->drawMarkPointsOnImg(mb, points, true);
 
     for (int i=0;i<nMarkPoints;i++){
         if (pId==-1 || pId!=i)

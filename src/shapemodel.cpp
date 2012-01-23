@@ -13,26 +13,12 @@ ShapeModel::ShapeModel()
 void ShapeModel::loadShapeInfo(const char* shapeFileName)
 {
     printf("Loading shape info from %s\n", shapeFileName);
-    int nPathT;
 
     AFReader shapeDefFile(shapeFileName);
 //     FILE *fp = fopen(shapeFileName, "r");
     FILE *fp = shapeDefFile.FH();
-    shapeDefFile.Sync();
-    fscanf(fp, "%d", &nMarkPoints);
-    shapeDefFile.Sync();
-    fscanf(fp, "%d", &nPathT);
 
-    int i, j;
-    shapeInfo.pathSeg.resize(nPathT+1);
-    shapeInfo.pathType.resize(nPathT);
-    shapeInfo.nPath = nPathT;
-    shapeInfo.pathSeg[0] = 0;
-    for (i=0;i<nPathT;i++){
-        shapeDefFile.Sync();
-        fscanf(fp, "%d%d", &shapeInfo.pathSeg[i+1],
-                        &shapeInfo.pathType[i]);
-    }
+    nMarkPoints = shapeInfo.loadFromShapeDescFile(shapeDefFile);
 
     // r.y -= r.height*?
     shapeDefFile.Sync();
@@ -60,23 +46,6 @@ void ShapeModel::loadShapeInfo(const char* shapeFileName)
     shapeDefFile.Sync();
     fscanf(fp, "%lf", &searchInitYOffset);
 
-    shapeInfo.pointInfo.resize(nMarkPoints);
-    for (i=0;i<nPathT;i++){
-        for (j=shapeInfo.pathSeg[i]; j<shapeInfo.pathSeg[i+1]; j++){
-            shapeInfo.pointInfo[j].pathId   = i;
-            shapeInfo.pointInfo[j].type     = shapeInfo.pathType[i];
-            shapeInfo.pointInfo[j].connectFrom  = j-1;
-            shapeInfo.pointInfo[j].connectTo    = j+1;
-        }
-        if (shapeInfo.pathType[i]==1){
-            shapeInfo.pointInfo[shapeInfo.pathSeg[i]].connectFrom = shapeInfo.pathSeg[i+1]-1;
-            shapeInfo.pointInfo[shapeInfo.pathSeg[i+1]-1].connectTo = shapeInfo.pathSeg[i];
-        }
-        else {
-            shapeInfo.pointInfo[shapeInfo.pathSeg[i]].connectFrom = shapeInfo.pathSeg[i];
-            shapeInfo.pointInfo[shapeInfo.pathSeg[i+1]-1].connectTo = shapeInfo.pathSeg[i+1]-1;
-        }
-    }
 }
 
 void ShapeModel::readTrainData(const char *listFileName)

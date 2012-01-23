@@ -21,8 +21,6 @@ vector< Rect > findAllFaces(const Mat &img);
 // fill a convex poly by a point vector.
 void fillConvexFromPoints(Mat &img, vector< Point > &vP, cv::Scalar s);
 
-Mat drawMarkPointsOnImg(Mat &img, const vector< Point > &vP, ShapeInfo &shapeInfo, 
-                          bool drawInPlace = false);
 } // Namespace
 
 #endif

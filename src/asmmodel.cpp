@@ -232,7 +232,7 @@ void ASMModel::showResult(Mat& img, vector< FitResult >& res)
         sv.restoreToPointList(V, res[i].transformation);*/
 //         for (int j=0; j<V.size(); j++)
 //             printf("%d, %d\n", V[j].x, V[j].y);
-        drawMarkPointsOnImg(mb, V, shapeInfo, true);
+        shapeInfo.drawMarkPointsOnImg(mb, V, true);
     }
 
     if (!img.empty())
