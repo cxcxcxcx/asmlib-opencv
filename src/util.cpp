@@ -1,5 +1,7 @@
 #include "util.h"
 
+namespace StatModel {
+
 void fillConvexFromPoints(Mat &img, vector< Point > &pList, cv::Scalar s){
     cv::Mat_< cv::Vec2i > pointMat(1, pList.size());
     for (size_t i=0; i<pList.size(); i++)
@@ -33,3 +35,5 @@ Mat drawMarkPointsOnImg(Mat& img, const vector< Point >& vP, ShapeInfo& shapeInf
     }
     return mb;
 }
+
+} // Namespace

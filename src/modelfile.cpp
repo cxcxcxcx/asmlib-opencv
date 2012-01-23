@@ -16,6 +16,8 @@
 
 #include "modelfile.h"
 
+namespace StatModel {
+
 void ModelFile::writePCA(const PCA* p)
 {
     int i, j;
@@ -48,7 +50,7 @@ PCA * ModelFile::readPCA(PCA * &p)
     p->eigenvalues = Mat_<double>::zeros(rows, 1);
     for (i=0;i<rows;i++)
         readReal(p->eigenvalues.at<double>(i, 0));
-    
+
     p->mean = Mat_<double>::zeros(cols, 1);
     for (i=0;i<cols;i++){
         readReal(p->mean.at<double>(i, 0));
@@ -56,3 +58,4 @@ PCA * ModelFile::readPCA(PCA * &p)
     return p;
 }
 
+} // Namespace

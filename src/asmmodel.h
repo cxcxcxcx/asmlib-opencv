@@ -18,6 +18,9 @@
 #define ASMMODEL_H
 #include "shapemodel.h"
 #include "cv.h"
+
+namespace StatModel {
+
 using cv::Point_;
 using cv::Mat_;
 
@@ -96,4 +99,5 @@ public:
                                FitResult & fitResult, FitResult &b_old, int l);
 };
 
+} // Namespace
 #endif // ASMMODEL_H

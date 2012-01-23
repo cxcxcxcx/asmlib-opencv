@@ -16,6 +16,8 @@ using cv::imshow;
 using std::cerr;
 using std::endl;
 
+using namespace StatModel;
+
 void buildASMModel(ASMModel & asmModel,
                    string shapeDef, string ptsList, string modelPath)
 {

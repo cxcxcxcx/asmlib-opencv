@@ -12,6 +12,8 @@ using cv::Size;
 
 using std::vector;
 
+namespace StatModel {
+
 //! face detect
 Rect findOneFace(const Mat &img);
 vector< Rect > findAllFaces(const Mat &img);
@@ -21,5 +23,6 @@ void fillConvexFromPoints(Mat &img, vector< Point > &vP, cv::Scalar s);
 
 Mat drawMarkPointsOnImg(Mat &img, const vector< Point > &vP, ShapeInfo &shapeInfo, 
                           bool drawInPlace = false);
+} // Namespace
 
 #endif

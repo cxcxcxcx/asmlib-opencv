@@ -20,6 +20,8 @@
 #include "cv.h"
 using cv::Mat;
 
+namespace StatModel {
+  
 class ShapeVec;
 
 //! A similarity transformation
@@ -65,4 +67,6 @@ public:
     //! b in similarity transformation matrix
     double b;
 }; 
+
+} // Namespace
 #endif // SIMILARITYTRANS_H

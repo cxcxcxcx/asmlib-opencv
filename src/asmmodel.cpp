@@ -18,11 +18,13 @@
 #include "util.h"
 #include <cstdio>
 
+namespace StatModel {
+
 void ASMModel::buildModel()
 {
     ShapeModel::buildModel();
-    
-    printf("Building active model...\n");
+
+    printf("(II) Building active model...\n");
     buildLocalDiffStructure();
 }
 
@@ -49,7 +51,7 @@ void ASMModel::buildLocalDiffStructure()
         myStep[i] = 1.3* sqrt( (xMax-xMin)*(yMax-yMin) / 10000.);
 //         printf("step: %f\n", myStep[i]);
     }
-    
+
     Mat_< double > *tCovar, *tMean;
     Mat_< double > datMat(2*localFeatureRad+1, nTrain);
     meanG.resize(this->pyramidLevel + 1);
@@ -79,18 +81,18 @@ void ASMModel::findParamForShapeBTSM(const ShapeVec &Y, const ShapeVec &Y_old,
 {
     //const double c[3] = {0.005, 0.005, 0.001};
     const double c[3] = {0.0005, 0.0005, 0.0005};
-    
+
     double rho2, delta2, x2;
     double p;
     ShapeVec y_r, y_rpr, xFromParam, xFromY, x;
-    
+
     ShapeVec yt = Y_old;
     yt -= Y;
     rho2 = c[l] * yt.dot(yt);
-    
+
     SimilarityTrans curTrans = b_old.transformation;
     Mat_< double > curParam, tmpFullParam, lastParam;
-    
+
     curParam.create(pcaPyr[l].eigenvalues.rows, 1);
     for (int i=0; i<pcaPyr[l].eigenvalues.rows; i++)
         if (i<b_old.params.rows)
@@ -98,32 +100,32 @@ void ASMModel::findParamForShapeBTSM(const ShapeVec &Y, const ShapeVec &Y_old,
         else
             curParam(i, 0) = 0;
     //curParam = curParam.rowRange(0, pcaPyr[l].eigenvalues.rows);
-    
+
     int ii=0;
     do{
         double s = curTrans.getS();
         lastParam = curParam.clone();
-        
+
         // Expectation Step
         curTrans.backTransform(Y, y_r);
         p = sigma2Pyr[l]/(sigma2Pyr[l] + rho2/(s * s));
         //printf("p: %g, rho2/s2: %g, sigma2: %g\n", p, rho2/(s * s), sigma2Pyr[l]);
         delta2 = 1/(1/sigma2Pyr[l] + s*s / rho2);
-//         printf("p: %g, rho2/s2: %g, sigma2: %g, delta2: %g\n", 
+//         printf("p: %g, rho2/s2: %g, sigma2: %g, delta2: %g\n",
 //                p, rho2/(s * s), sigma2Pyr[l], delta2);
-        
+
         this->pcaPyr[l].backProject(curParam, xFromParam);
-        
+
         pcaFullShape->project(y_r, tmpFullParam);
         pcaFullShape->backProject(tmpFullParam, y_rpr);
         x = p*y_rpr + (1-p) * xFromParam;
         x2 = x.dot(x) + (x.rows - 4) * delta2;
-//         printf("p: %g, rho2/s2: %g, sigma2: %g, delta2: %g, x.x: %g, x2: %g\n", 
+//         printf("p: %g, rho2/s2: %g, sigma2: %g, delta2: %g, x.x: %g, x2: %g\n",
 //                p, rho2/(s * s), sigma2Pyr[l], delta2, x.dot(x), x2);
-        
+
         // Maximization Step
         pcaPyr[l].project(x, curParam);
-        
+
         for (int i=0; i<pcaPyr[l].eigenvalues.rows; i++)
             curParam(i, 0) *= (pcaShape->eigenvalues.at<double>(i, 0))/
                             (pcaShape->eigenvalues.at<double>(i, 0)+sigma2Pyr[l]);
@@ -135,7 +137,7 @@ void ASMModel::findParamForShapeBTSM(const ShapeVec &Y, const ShapeVec &Y_old,
         curTrans.b /= x2;
         curTrans.Xt = Y.getXMean();
         curTrans.Yt = Y.getYMean();
-        
+
         //clampParamVec(curParam);
         ii++;
     } while (norm(lastParam-curParam)>1e-4 && ii<20);
@@ -145,11 +147,11 @@ void ASMModel::findParamForShapeBTSM(const ShapeVec &Y, const ShapeVec &Y_old,
 
 void ASMModel::findParamForShape(const ShapeVec &Y, FitResult & fitResult){
     ShapeVec x, y;
-    
+
     // Step 1: Init to zeros
     fitResult.params = Mat_<double>::zeros(nShapeParams, 1);
     SimilarityTrans &st = fitResult.transformation;
-    
+
     Mat_<double> resOld;
     do {
         resOld = fitResult.params.clone();
@@ -161,16 +163,16 @@ void ASMModel::findParamForShape(const ShapeVec &Y, FitResult & fitResult){
         st.backTransform(Y, y);
         // Step 5: Align to mean shape
         y.alignTo(meanShape);
-        
+
         // Step 6: Update parameters
         projectShapeToParam(y, fitResult.params);
-        
+
         // Step 7:
         clampParamVec(fitResult.params);
     } while (norm(resOld-fitResult.params)>1e-3);
 }
 
-void ASMModel::fit(const Mat & img, vector< FitResult > & fitResult, 
+void ASMModel::fit(const Mat & img, vector< FitResult > & fitResult,
              cv::CascadeClassifier &faceCascade, bool biggestOnly, int verbose)
 {
 	int cd=0;
@@ -221,7 +223,7 @@ void ASMModel::showResult(Mat& img, vector< FitResult >& res)
         cv::cvtColor(img, mb, CV_GRAY2RGB);
     else
         mb = img.clone();
-    
+
     ShapeVec sv;
     for (uint i=0; i<res.size(); i++){
         vector< Point_<int> > V;
@@ -232,7 +234,7 @@ void ASMModel::showResult(Mat& img, vector< FitResult >& res)
 //             printf("%d, %d\n", V[j].x, V[j].y);
         drawMarkPointsOnImg(mb, V, shapeInfo, true);
     }
-    
+
     if (!img.empty())
         imshow("hoho", mb);
 }
@@ -254,15 +256,15 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
     }
     else
         grayImg = img;
-    
+
     // Step 3: Resize each face image
     Mat resizedImg;
     // Resize the image to proper size
     double ratio;
     ratio = sqrt( double(40000) / (grayImg.rows * grayImg.cols));
     cv::resize(grayImg, resizedImg, Size(grayImg.cols*ratio, grayImg.rows*ratio));
-    
-    puts("Start fitting...");
+
+    //puts("Start fitting...");
     ModelImage curSearch;
     curSearch.setShapeInfo( &shapeInfo );
     curSearch.loadTrainImage(resizedImg);
@@ -271,9 +273,9 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
 
     ShapeVec &sv = curSearch.shapeVec;
     ShapeVec shape_old;
-    
+
     projectParamToShape(fitResult.params, sv);
-    SimilarityTrans st = sv.getShapeTransformFitingSize(resizedImg.size(), 
+    SimilarityTrans st = sv.getShapeTransformFitingSize(resizedImg.size(),
                                                       searchScaleRatio,
                                                       searchInitXOffset,
                                                       searchInitYOffset);
@@ -282,9 +284,9 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
 
     pyramidLevel = 2;
     int k=localFeatureRad;
-    
+
     ns=4;
-    
+
     // sum of offsets of current iteration.
     int totalOffset;
     if (verbose >= ASM_FIT_VERBOSE_AT_LEVEL)
@@ -302,7 +304,7 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
         for (runT=0; runT<10; runT++){
             // Backup current shape
             shape_old.fromPointList(curSearch.points);
-            
+
             totalOffset = 0;
             vector< Point_< int > > bestEP(nMarkPoints);
             for (int i=0; i<this->nMarkPoints; i++){
@@ -315,7 +317,7 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
                 double absSum;
                 for (int e=ns; e>=-ns; e--){
                     curSearch.getPointsOnNorm(i, k, l, V, 2*searchStepAreaRatio, e);
-                
+
                     absSum = 0;
                     for (int j=-k;j<=k;j++){
                         nrmV(j+k, 0) = img(V[j+k]);
@@ -326,7 +328,7 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
 //                     printf("absSum: %lf, ct: %lf\n", absSum, ct);
                     if (verbose >= ASM_FIT_VERBOSE_AT_POINT)
                         curSearch.show(l, i, true, e);
-                    
+
                     if (ct<curBest || curBest<0){
                         curBest = ct;
                         bestI = e;
@@ -336,7 +338,7 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
 //                 printf("best e: %d\n", bestI);
 //                 bestEP[i] = V[bestI+(ns+k)];
                 totalOffset += abs(bestI);
-                
+
                 if (verbose >= ASM_FIT_VERBOSE_AT_POINT)
                     curSearch.show(l, i, true, bestI);
             }
@@ -348,25 +350,25 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
                 if (l>0) curSearch.points[i].y += (1<<(l-1));
             }
             curSearch.shapeVec.fromPointList(curSearch.points);
-            
+
             if (verbose >= ASM_FIT_VERBOSE_AT_ITERATION)
                 curSearch.show(l);
-            
+
             // Project to PCA model and then back
             //findParamForShape(curSearch.shapeVec,  fitResult);
             findParamForShapeBTSM(curSearch.shapeVec, shape_old, fitResult, fitResult, l);
-            
+
             pcaPyr[l].backProject(fitResult.params, sv);
-            
+
             // Reconstruct new shape
             curSearch.buildFromShapeVec(fitResult.transformation);
-            
+
             avgMov = (double)totalOffset/nMarkPoints;
             if (verbose >= ASM_FIT_VERBOSE_AT_ITERATION){
                 printf("Iter %d:  Average offset: %.3f\n", runT+1, avgMov);
                 curSearch.show(l);
             }
-            
+
             if (avgMov < 1.3){
                 runT++;
                 break;
@@ -377,7 +379,7 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
             curSearch.show(l);
         }
     }
-    
+
     SimilarityTrans s2;
     s2.a = 1/ratio;
     fitResult.transformation = s2 * fitResult.transformation;
@@ -390,7 +392,7 @@ void ASMModel::loadFromFile(ModelFile& file)
     //! parameter k for ASM
     file.readInt(localFeatureRad);
     file.readInt(ns);
-    
+
     int i,j;
     int rows, cols;
     file.readInt(rows);
@@ -405,7 +407,7 @@ void ASMModel::loadFromFile(ModelFile& file)
                     file.readReal(iCovarG[i][j](ii, jj));
         }
     }
-    
+
     file.readInt(rows);
     file.readInt(cols);
     meanG.resize(pyramidLevel+1);
@@ -418,24 +420,22 @@ void ASMModel::loadFromFile(ModelFile& file)
                     file.readReal(meanG[i][j](ii, jj));
         }
     }
-    
+
     // Prepare BTSM pyramid
     double curSigma2 = 0;
     for (i=0; i<pcaFullShape->eigenvalues.rows; i++){
         curSigma2 += pcaFullShape->eigenvalues.at<double>(i, 0);
     }
-    printf("sssssssssig: %g\n", curSigma2);
-    
+
     // Layer 2, 5 parameter
     for (i=0; i<5 && i<pcaFullShape->eigenvalues.rows; i++){
         curSigma2 -= pcaFullShape->eigenvalues.at<double>(i, 0);
     }
     sigma2Pyr[2] = curSigma2 / (nMarkPoints*2-4);
-    printf("sssssssssig: %g\n", curSigma2);
     pcaPyr[2].eigenvalues = pcaFullShape->eigenvalues.rowRange(0, i);
     pcaPyr[2].eigenvectors = pcaFullShape->eigenvectors.rowRange(0, i);
     pcaPyr[2].mean = pcaFullShape->mean;
-    
+
     // Layer 1, 20 parameter
     for (; i<20 && i<pcaFullShape->eigenvalues.rows; i++){
         curSigma2 -= pcaFullShape->eigenvalues.at<double>(i, 0);
@@ -444,7 +444,7 @@ void ASMModel::loadFromFile(ModelFile& file)
     pcaPyr[1].eigenvalues = pcaFullShape->eigenvalues.rowRange(0, i);
     pcaPyr[1].eigenvectors = pcaFullShape->eigenvectors.rowRange(0, i);
     pcaPyr[1].mean = pcaFullShape->mean;
-    
+
     /*sigma2Pyr[2] = sigma2Pyr[1] = */sigma2Pyr[0] = sigma2;
     /*pcaPyr[2] = pcaPyr[1]= */pcaPyr[0] = *pcaShape;
 }
@@ -452,10 +452,10 @@ void ASMModel::loadFromFile(ModelFile& file)
 void ASMModel::saveToFile(ModelFile& file)
 {
     ShapeModel::saveToFile(file);
-    
+
     file.writeInt(localFeatureRad);
     file.writeInt(ns);
-    
+
     int i,j;
     int rows, cols;
     file.writeInt(rows = iCovarG[0][0].rows);
@@ -467,7 +467,7 @@ void ASMModel::saveToFile(ModelFile& file)
                     file.writeReal(iCovarG[i][j](ii, jj));
         }
     }
-    
+
     file.writeInt(rows = meanG[0][0].rows);
     file.writeInt(cols = meanG[0][0].cols);
     for (i=0;i<=pyramidLevel;i++){
@@ -478,3 +478,5 @@ void ASMModel::saveToFile(ModelFile& file)
         }
     }
 }
+
+} // Namespace

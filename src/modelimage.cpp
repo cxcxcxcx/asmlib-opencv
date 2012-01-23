@@ -1,7 +1,10 @@
 #include "modelimage.h"
 #include "afreader.h"
 //#include "delaunay.h"
+using std::cerr;
 
+namespace StatModel {
+  
 ModelImage::ModelImage()
 {
     //this->points.push_back(Point_<double>(1,1));
@@ -92,8 +95,6 @@ bool ModelImage::readPTS( const char * filename )
 
     // resize this shape
     this->points.resize(npoints);
-//    pointInfo.resize(npoints);
-    //this->shapeVec.create(npoints * 2, 1);
 
     // read all point data
     r.Sync();
@@ -109,7 +110,6 @@ bool ModelImage::readPTS( const char * filename )
         points[i].y = iy;
     }
     shapeVec.fromPointList(points);
-//     this->genShapeVecFromPoints();
 
 
     // File name of the host image is the same as the name pts file
@@ -120,9 +120,6 @@ bool ModelImage::readPTS( const char * filename )
         this->hostImageName = sFname.substr(0, sFname.rfind('.'));
     else
         fclose(fp);
-//     printf("%s\n", hostImageName.data());
-//    // we're now hold relative coordinates
-//    m_bAbsPointCoordinates = false;
 
     return true;
 }
@@ -139,7 +136,12 @@ void ModelImage::initPointsByVector(const std::vector< cv::Point2i >& V)
 bool ModelImage::loadTrainImage()
 {
     if (!imgLoaded){
-        loadTrainImage(imread(this->hostImageName));
+	  	Mat img = imread(this->hostImageName);
+		if (img.empty()) {
+		  cerr << "(EE) Loading image " + this->hostImageName + " failed!" << endl;
+		  throw;
+		}
+        loadTrainImage(img);
     }
     return imgLoaded;
 }
@@ -196,7 +198,7 @@ Mat_< double > ModelImage::getLocalStruct(int pId, int k, int level, double step
     vector< Point_< int > > pV;
 //     this->getPointsOnNorm(pId, k+1, level, pV);
 //     Mat_< double > v(2*k+3, 1), diffV(2*k+1, 1);
-    
+
 //     for (int i=k+1;i>=-k-1;i--){
 //         v(i+(k+1), 0) = this->imgPyrGray[level](pV[i+(k+1)]);
 //     }
@@ -258,7 +260,7 @@ void ModelImage::getPointsOnNorm(int pId, int k, int level,
     int nx, ny;
     int offsetX, offsetY;
     int prevX, prevY;
-    
+
     // Find the center point, here step===1
     prevX = 0;
     prevY = 0;
@@ -281,7 +283,7 @@ void ModelImage::getPointsOnNorm(int pId, int k, int level,
     else
         offsetX = -nx, offsetY = -ny;
 //     offsetX = offsetY = 0;
-    
+
     // Apply the "step", and find points
     vDirection *= step;
     prevX = 0;
@@ -330,7 +332,7 @@ Mat ModelImage::show(int l, int pId, bool showInWin, int highLight)
         cv::cvtColor(imgPyramid[0], mb, CV_GRAY2RGB);
     else
         mb = imgPyramid[0].clone();
-    
+
     for (int i=0;i<nMarkPoints;i++){
 //         printf("%d\n", i);
         cv::circle(mb, points[i], 3, cv::Scalar(25, 50, 255), 1, CV_AA);
@@ -373,3 +375,4 @@ Mat ModelImage::show(int l, int pId, bool showInWin, int highLight)
     }
     return mb;
 }
+} // Namespace

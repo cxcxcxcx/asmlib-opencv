@@ -16,6 +16,7 @@
 
 #include "shapevec.h"
 
+namespace StatModel {
 void ShapeVec::zeroGravity()
 {
     doTranslate(-getXMean(), -getYMean());
@@ -129,3 +130,5 @@ void ShapeVec::fromPointList(const std::vector< cv::Point2i >& v)
 //        shapeVec.setTransform(1, 0, 0);
     }
 }
+
+} // Namespace

@@ -1,5 +1,6 @@
 #include "afreader.h"
 
+namespace StatModel {
 //! Constructor. Opens the file.
 /**
 
@@ -110,3 +111,5 @@ void AFReader::SkipComments() {
         ungetc( ch, fh );
     }
 }
+
+} // Namespace

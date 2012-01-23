@@ -29,6 +29,8 @@ using cv::Mat;
 using cv::imread;
 using cv::mean;
 typedef unsigned int uint;
+
+namespace StatModel {
 //! Shape Vector
 class ShapeVec : public Mat_< double > {
 public:
@@ -83,5 +85,5 @@ public:
     // double scale, translateX, translateY;
 //     SimilarityTrans sTrans;
 };
-
+} // Namespace
 #endif // SHAPEVEC_H

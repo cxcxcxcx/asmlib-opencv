@@ -17,6 +17,7 @@
 #include "similaritytrans.h"
 #include "shapevec.h"
 
+namespace StatModel {
 void SimilarityTrans::backTransform(const ShapeVec &src, ShapeVec &dst){
     int nP = src.nPoints();
     double x11, x12, x21, x22;
@@ -83,3 +84,4 @@ void SimilarityTrans::warpImgBack(const cv::Mat& imgSrc, Mat& imgDst, bool useDs
     else
         cv::warpAffine(imgSrc, imgDst, M, imgSrc.size(), cv::INTER_LINEAR|cv::WARP_INVERSE_MAP);
 }
+} // Namespace

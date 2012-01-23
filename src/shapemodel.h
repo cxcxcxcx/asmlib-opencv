@@ -8,6 +8,8 @@
 using std::vector;
 using cv::PCA;
 
+namespace StatModel {
+  
 //! Used for viewing model
 struct ModelViewInfo
 {
@@ -172,5 +174,5 @@ protected:
     //! init Y offset when searching
     double searchInitYOffset;
 };
-
+} // Namespace
 #endif // SHAPEMODEL_H

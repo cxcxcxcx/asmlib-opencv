@@ -3,6 +3,7 @@
 
 #include <cstdio>
 
+namespace StatModel {
 //! File reader with support to omit # starting lines
 /**
 
@@ -34,5 +35,5 @@ private:
     const char LF;
     const char COMMENT_CHAR;
 };
-
+}
 #endif // AFREADER_H

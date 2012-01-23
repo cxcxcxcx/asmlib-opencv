@@ -13,6 +13,10 @@ using cv::Mat;
 using cv::imread;
 using cv::Size;
 
+# include "modelfile.h"
+
+namespace StatModel {
+
 struct PointInfo
 {
     int type;
@@ -21,7 +25,6 @@ struct PointInfo
     int connectTo;
 };
 
-# include "modelfile.h"
 struct ShapeInfo
 {
     vector< int > pathSeg;
@@ -168,4 +171,5 @@ public:
     ModelImage();
 };
 
+} // Namespace
 #endif // SHAPE_H

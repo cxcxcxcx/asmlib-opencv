@@ -3,6 +3,8 @@
 #include "asmmodel.h"
 #include "afreader.h"
 
+namespace StatModel {
+
 ShapeModel::ShapeModel()
 {
     pyramidLevel = 3;
@@ -12,7 +14,7 @@ void ShapeModel::loadShapeInfo(const char* shapeFileName)
 {
     printf("Loading shape info from %s\n", shapeFileName);
     int nPathT;
-    
+
     AFReader shapeDefFile(shapeFileName);
 //     FILE *fp = fopen(shapeFileName, "r");
     FILE *fp = shapeDefFile.FH();
@@ -20,7 +22,7 @@ void ShapeModel::loadShapeInfo(const char* shapeFileName)
     fscanf(fp, "%d", &nMarkPoints);
     shapeDefFile.Sync();
     fscanf(fp, "%d", &nPathT);
-    
+
     int i, j;
     shapeInfo.pathSeg.resize(nPathT+1);
     shapeInfo.pathType.resize(nPathT);
@@ -28,10 +30,10 @@ void ShapeModel::loadShapeInfo(const char* shapeFileName)
     shapeInfo.pathSeg[0] = 0;
     for (i=0;i<nPathT;i++){
         shapeDefFile.Sync();
-        fscanf(fp, "%d%d", &shapeInfo.pathSeg[i+1], 
+        fscanf(fp, "%d%d", &shapeInfo.pathSeg[i+1],
                         &shapeInfo.pathType[i]);
     }
-    
+
     // r.y -= r.height*?
     shapeDefFile.Sync();
     fscanf(fp, "%lf", &searchYOffset);
@@ -47,7 +49,7 @@ void ShapeModel::loadShapeInfo(const char* shapeFileName)
     // step: ?*100/sqrt(area)
     shapeDefFile.Sync();
     fscanf(fp, "%lf", &searchStepAreaRatio);
-    
+
     // init scale ratio when searching
     shapeDefFile.Sync();
     fscanf(fp, "%lf", &searchScaleRatio);
@@ -87,7 +89,7 @@ void ShapeModel::readTrainData(const char *listFileName)
 		listDir = sName.substr(0, posD+1);
 	else
 		listDir = "./";
-	
+
     FILE *fp = fopen(listFileName,"r");
     if (fp==NULL){
         printf("ERROR! list file %s not found!!", listFileName);
@@ -109,7 +111,7 @@ void ShapeModel::readTrainData(const char *listFileName)
 			ptsPath = sBuf;
 		else
 			ptsPath = listDir + sBuf;
-		
+
         ss = new ModelImage();
         ss->readPTS(ptsPath.data());
         ss->setShapeInfo( &shapeInfo );
@@ -127,7 +129,7 @@ void ShapeModel::buildModel()
 {
     this->alignShapes();
     this->buildPCA();
-    preparePatterns();
+    //preparePatterns();
 }
 
 void ShapeModel::alignShapes()
@@ -184,16 +186,16 @@ void ShapeModel::buildPCA()
 //     for (i=0; i<pcaShape->eigenvalues.rows; i++){
 //         printf("%d: %g\n", i, pcaShape->eigenvalues.at<double>(i, 0));
 //     }
-           
-    
-           
+
+
+
     for (i=0;i<pcaShape->eigenvalues.rows && i<40;i++){
         sCur += pcaShape->eigenvalues.at<double>(i, 0);
 //         printf("%d: %g\n", i, pcaShape->eigenvalues.at<double>(i, 0));
         if (sCur>eigValueSum*0.98)
             break;
     }
-    
+
     // Prepare for the BTSM
     this->sigma2 = (eigValueSum - sCur)/(vD - 4);
     printf("sssiggg: %g\n", sigma2);
@@ -201,7 +203,7 @@ void ShapeModel::buildPCA()
     pcaFullShape->eigenvalues = pcaShape->eigenvalues.clone();
     pcaFullShape->eigenvectors = pcaShape->eigenvectors.clone();
     pcaFullShape->mean = pcaShape->mean.clone();
-    
+
     if (i<pcaShape->eigenvalues.rows)
         nShapeParams = i+1;
     else
@@ -219,10 +221,10 @@ void ShapeModel::preparePatterns()
     Mat_<double> cParam, pt;
     Mat_<double> sumParam;
     double sumW;
-    
+
     sumW = 0;
     sumParam = Mat_<double>::zeros(nShapeParams, 1);
-    
+
     for (int i=0; i<nTrain; i++){
         r = imageSet[i].shapeVec.getBoundRect();
         projectShapeToParam(imageSet[i].shapeVec, cParam);
@@ -240,7 +242,7 @@ void ShapeModel::preparePatterns()
     for (int i=0; i<nShapeParams; i++)
         printf("%g, ", sumParam(i, 0));
     printf("\n");
-    
+
     // Eye Size
     sumW = 0;
     sumParam = Mat_<double>::zeros(nShapeParams, 1);
@@ -274,25 +276,25 @@ void ShapeModel::saveToFile(ModelFile &file)
     file.writeInt(nMarkPoints);
     file.writeInt(nTrain);
     file.writeInt(nShapeParams);
-    
+
     file.writeReal(searchYOffset);
     file.writeReal(searchXOffset);
     file.writeReal(searchWScale);
     file.writeReal(searchHScale);
     file.writeReal(searchStepAreaRatio);
-    
+
     file.writeReal(searchScaleRatio);
     file.writeReal(searchInitXOffset);
     file.writeReal(searchInitYOffset);
-    
+
     file.writePCA(pcaShape);
     for (int i=0;i<nMarkPoints*2;i++)
         file.writeReal(meanShape(i, 0));
-    
+
     // Info for BTSM
     file.writeReal(sigma2);
     file.writePCA(pcaFullShape);
-    
+
     shapeInfo.writeToFile(file);
 
     ////! Mean shape after aligning
@@ -312,22 +314,22 @@ void ShapeModel::loadFromFile(ModelFile &file)
     file.readReal(searchWScale);
     file.readReal(searchHScale);
     file.readReal(searchStepAreaRatio);
-    
+
     file.readReal(searchScaleRatio);
     file.readReal(searchInitXOffset);
     file.readReal(searchInitYOffset);
-    
+
     // PCA shape model
     file.readPCA(pcaShape);
 
     meanShape.create(nMarkPoints*2, 1);
     for (int i=0;i<nMarkPoints*2;i++)
         file.readReal(meanShape(i, 0));
-    
+
     // Info for BTSM
     file.readReal(sigma2);
     file.readPCA(pcaFullShape);
-    
+
     shapeInfo.readFromFile(file);
 }
 
@@ -380,7 +382,7 @@ void ShapeModel::getShapeParam(ModelImage &mi, FitResult &res)
     mi.shapeVec.zeroGravity();
     mi.shapeVec.scaleToOne();
     mi.shapeVec.alignTo(this->meanShape);
-    
+
     FitResult ans;
     projectShapeToParam(mi.shapeVec, ans.params);
     res = ans;
@@ -413,7 +415,7 @@ void viewShapeUpdateCurParam(int pos, void *data)
 {
     ModelViewInfo *pInfo = (ModelViewInfo *)data;
     pInfo->curParam = pos;
-    cvSetTrackbarPos("param value", "Viewing Shape Model", 
+    cvSetTrackbarPos("param value", "Viewing Shape Model",
                    pInfo->vList[pos]);
 }
 
@@ -426,7 +428,7 @@ void ShapeModel::viewShapeModelUpdate(ModelViewInfo *pInfo)
                         sqrt(pcaShape->eigenvalues.at<double>(i, 0));
     }
     Mat_<cv::Vec3b> img;
-    
+
     ModelImage s;
     s.setShapeInfo(&shapeInfo);
     s.loadTrainImage(Mat_<unsigned char>::ones(190*2, 160*2)*255);
@@ -449,8 +451,10 @@ void ShapeModel::viewShapeModel()
     q1 = 15;
     q2 = 0;
     namedWindow("Viewing Shape Model", CV_WINDOW_AUTOSIZE);
-    createTrackbar("param value", "Viewing Shape Model", 
+    createTrackbar("param value", "Viewing Shape Model",
                    &q1, 30, &viewShapeUpdateValue, &vData);
-    createTrackbar("which param", "Viewing Shape Model", 
+    createTrackbar("which param", "Viewing Shape Model",
                    &q2, nShapeParams-1, &viewShapeUpdateCurParam, &vData);
 }
+
+} // Namespace
