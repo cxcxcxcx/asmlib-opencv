@@ -1,5 +1,6 @@
-#include "shapemodel.h"
 #include <cstdio>
+#include <highgui.h>
+#include "shapemodel.h"
 #include "asmmodel.h"
 #include "afreader.h"
 
@@ -7,6 +8,7 @@ namespace StatModel {
 
 ShapeModel::ShapeModel()
 {
+    /// \todo Make the "3" here a constant or a configurable variable.
     pyramidLevel = 3;
 }
 
@@ -15,7 +17,6 @@ void ShapeModel::loadShapeInfo(const char* shapeFileName)
     printf("Loading shape info from %s\n", shapeFileName);
 
     AFReader shapeDefFile(shapeFileName);
-//     FILE *fp = fopen(shapeFileName, "r");
     FILE *fp = shapeDefFile.FH();
 
     nMarkPoints = shapeInfo.loadFromShapeDescFile(shapeDefFile);
@@ -50,14 +51,14 @@ void ShapeModel::loadShapeInfo(const char* shapeFileName)
 
 void ShapeModel::readTrainData(const char *listFileName)
 {
-	// Find the directory of the list file
-	string sName(listFileName), listDir;
-	int posD;
-	posD = sName.find_last_of("/\\");
-	if (posD != string::npos)
-		listDir = sName.substr(0, posD+1);
-	else
-		listDir = "./";
+    // Find the directory of the list file
+    string sName(listFileName), listDir;
+    int posD;
+    posD = sName.find_last_of("/\\");
+    if (posD != string::npos)
+        listDir = sName.substr(0, posD+1);
+    else
+        listDir = "./";
 
     FILE *fp = fopen(listFileName,"r");
     if (fp==NULL){
@@ -68,7 +69,7 @@ void ShapeModel::readTrainData(const char *listFileName)
     ModelImage *ss;
     char sBuf[300];
     int l;
-	string ptsPath;
+    string ptsPath;
     while (!feof(fp)){
         char * nk=fgets(sBuf,300,fp);
         l=strlen(sBuf);
@@ -76,16 +77,14 @@ void ShapeModel::readTrainData(const char *listFileName)
             sBuf[l-1]=0;
         if (nk==0 || sBuf[0]==0)
             continue;
-		if (sBuf[0]=='/')
-			ptsPath = sBuf;
-		else
-			ptsPath = listDir + sBuf;
+        if (sBuf[0]=='/')
+            ptsPath = sBuf;
+        else
+            ptsPath = listDir + sBuf;
 
         ss = new ModelImage();
         ss->readPTS(ptsPath.data());
         ss->setShapeInfo( &shapeInfo );
-//        ss->loadTrainImage();
-//        ss->show();
         this->imageSet.push_back(*ss);
         delete ss;
     }
@@ -94,8 +93,11 @@ void ShapeModel::readTrainData(const char *listFileName)
     fclose(fp);
 }
 
-void ShapeModel::buildModel()
+void ShapeModel::buildModel(const string& shapeDefFile, const string& ptsListFile)
 {
+    loadShapeInfo(shapeDefFile.c_str());
+    readTrainData(ptsListFile.c_str());
+
     this->alignShapes();
     this->buildPCA();
     //preparePatterns();
@@ -128,8 +130,6 @@ void ShapeModel::alignShapes()
     } while (norm(curMean-newMean)>1e-10);
 
     meanShape = curMean;
-    // meanShape is not generated from any transformation, then scale=0
-//    meanShape.setTransform(0, 0, 0);
 }
 
 void ShapeModel::buildPCA()
@@ -265,9 +265,6 @@ void ShapeModel::saveToFile(ModelFile &file)
     file.writePCA(pcaFullShape);
 
     shapeInfo.writeToFile(file);
-
-    ////! Mean shape after aligning
-    //ShapeVec meanShape;
 }
 
 void ShapeModel::loadFromFile(ModelFile &file)
@@ -302,38 +299,6 @@ void ShapeModel::loadFromFile(ModelFile &file)
     shapeInfo.readFromFile(file);
 }
 
-void ShapeModel::load(const string& path, bool bin)
-{
-    if (bin){
-        ModelFile mf;
-        mf.openFile(path.data(), "rb");
-        this->loadFromFile(mf);
-        mf.closeFile();
-    }
-    else {
-        ModelFileAscii mf;
-        mf.openFile(path.data(), "r");
-        this->loadFromFile(mf);
-        mf.closeFile();
-    }
-}
-
-void ShapeModel::save(const string& path, bool bin)
-{
-    if (bin){
-        ModelFile mf;
-        mf.openFile(path.data(), "wb");
-        this->saveToFile(mf);
-        mf.closeFile();
-    }
-    else {
-        ModelFileAscii mf;
-        mf.openFile(path.data(), "w");
-        this->saveToFile(mf);
-        mf.closeFile();
-    }
-}
-
 void ShapeModel::projectParamToShape(const Mat_<double> & paramVec,
                                      ShapeVec & shapeVec)
 {
@@ -346,19 +311,9 @@ void ShapeModel::projectShapeToParam(const ShapeVec & shapeVec,
     this->pcaShape->project(shapeVec, paramVec);
 }
 
-void ShapeModel::getShapeParam(ModelImage &mi, FitResult &res)
-{
-    mi.shapeVec.zeroGravity();
-    mi.shapeVec.scaleToOne();
-    mi.shapeVec.alignTo(this->meanShape);
-
-    FitResult ans;
-    projectShapeToParam(mi.shapeVec, ans.params);
-    res = ans;
-}
-
 void ShapeModel::clampParamVec( Mat_< double > &paramVec )
 {
+    /// \Todo: Change "3" to a configurable variable.
     for (int i=0;i<this->nShapeParams;i++){
         double ei = sqrt(pcaShape->eigenvalues.at<double>(i, 0));
         if (paramVec(i, 0) > 3*ei)
@@ -368,21 +323,22 @@ void ShapeModel::clampParamVec( Mat_< double > &paramVec )
     }
 }
 
-#include "highgui.h"
 using cv::namedWindow;
 using cv::createTrackbar;
 using cv::setTrackbarPos;
 
+//! Callback function for updating value.
 void viewShapeUpdateValue(int pos, void *data)
 {
-    ModelViewInfo *pInfo = (ModelViewInfo *)data;
+    ShapeModel::ModelViewInfo *pInfo = (ShapeModel::ModelViewInfo *)data;
     pInfo->vList[pInfo->curParam] = pos;
     ((ShapeModel *)(pInfo->pModel))->viewShapeModelUpdate(pInfo);
 }
 
+//! Callback function for choosing a different parameter.
 void viewShapeUpdateCurParam(int pos, void *data)
 {
-    ModelViewInfo *pInfo = (ModelViewInfo *)data;
+    ShapeModel::ModelViewInfo *pInfo = (ShapeModel::ModelViewInfo *)data;
     pInfo->curParam = pos;
     cvSetTrackbarPos("param value", "Viewing Shape Model",
                    pInfo->vList[pos]);

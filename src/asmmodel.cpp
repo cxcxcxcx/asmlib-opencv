@@ -1,28 +1,12 @@
-/*
-   This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
-   License version 2 as published by the Free Software Foundation.
-
-   This library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-
-   You should have received a copy of the GNU Library General Public License
-   along with this library; see the file COPYING.LIB.  If not, write to
-   the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02110-1301, USA.
-*/
-
 #include "asmmodel.h"
 #include "util.h"
 #include <cstdio>
 
 namespace StatModel {
 
-void ASMModel::buildModel()
+void ASMModel::buildModel(const string& shapeDefFile, const string& ptsListFile)
 {
-    ShapeModel::buildModel();
+    ShapeModel::buildModel(shapeDefFile, ptsListFile);
 
     printf("(II) Building active model...\n");
     buildLocalDiffStructure();
@@ -77,7 +61,7 @@ void ASMModel::buildLocalDiffStructure()
 }
 
 void ASMModel::findParamForShapeBTSM(const ShapeVec &Y, const ShapeVec &Y_old,
-                               FitResult & fitResult, FitResult &b_old, int l)
+                               ASMFitResult & fitResult, ASMFitResult &b_old, int l)
 {
     //const double c[3] = {0.005, 0.005, 0.001};
     const double c[3] = {0.0005, 0.0005, 0.0005};
@@ -107,7 +91,7 @@ void ASMModel::findParamForShapeBTSM(const ShapeVec &Y, const ShapeVec &Y_old,
         lastParam = curParam.clone();
 
         // Expectation Step
-        curTrans.backTransform(Y, y_r);
+        curTrans.invTransform(Y, y_r);
         p = sigma2Pyr[l]/(sigma2Pyr[l] + rho2/(s * s));
         //printf("p: %g, rho2/s2: %g, sigma2: %g\n", p, rho2/(s * s), sigma2Pyr[l]);
         delta2 = 1/(1/sigma2Pyr[l] + s*s / rho2);
@@ -145,7 +129,7 @@ void ASMModel::findParamForShapeBTSM(const ShapeVec &Y, const ShapeVec &Y_old,
     fitResult.transformation = curTrans;
 }
 
-void ASMModel::findParamForShape(const ShapeVec &Y, FitResult & fitResult){
+void ASMModel::findParamForShape(const ShapeVec &Y, ASMFitResult & fitResult){
     ShapeVec x, y;
 
     // Step 1: Init to zeros
@@ -160,7 +144,7 @@ void ASMModel::findParamForShape(const ShapeVec &Y, FitResult & fitResult){
         // Step 3: Align x to Y
         st.setTransformByAlign(x, Y);
         // Step 4: Invert transform Y to y
-        st.backTransform(Y, y);
+        st.invTransform(Y, y);
         // Step 5: Align to mean shape
         y.alignTo(meanShape);
 
@@ -172,29 +156,13 @@ void ASMModel::findParamForShape(const ShapeVec &Y, FitResult & fitResult){
     } while (norm(resOld-fitResult.params)>1e-3);
 }
 
-void ASMModel::fit(const Mat & img, vector< FitResult > & fitResult,
-             cv::CascadeClassifier &faceCascade, bool biggestOnly, int verbose)
-{
-	int cd=0;
-	if (biggestOnly)
-		cd = CV_HAAR_FIND_BIGGEST_OBJECT;
-    // Step 1: Search for faces
-    vector<cv::Rect> faces;
-    try{
-        faceCascade.detectMultiScale( img, faces,
-            1.2, 2, cd
-            //|CV_HAAR_FIND_BIGGEST_OBJECT
-            //|CV_HAAR_DO_ROUGH_SEARCH
-            |CV_HAAR_SCALE_IMAGE
-            , Size(60, 60) );
-    }
-    catch (cv::Exception e){
-        printf("Face detect error...(%s)\n", e.err.data());
-        faces.clear();
-    }
-    fitResult.resize(faces.size());
-    for (uint i=0; i<faces.size(); i++){
-        cv::Rect r = faces[i];
+vector< ASMFitResult > ASMModel::fitAll(
+        const Mat & img,
+        const vector< cv::Rect > & detectedObjs,
+        int verbose) {
+    vector< ASMFitResult > fitResultV;
+    for (uint i=0; i<detectedObjs.size(); i++){
+        cv::Rect r = detectedObjs[i];
         r.y -= r.height*searchYOffset;
         r.x -= r.width*searchXOffset;
         if (r.x<0) r.x = 0;
@@ -203,20 +171,20 @@ void ASMModel::fit(const Mat & img, vector< FitResult > & fitResult,
         r.height *= searchHScale;
         if (r.x+r.width>img.cols) r.width = img.cols-r.x;
         if (r.y+r.height>img.rows) r.height = img.rows-r.y;
-        // Do the search!
-        doSearch(img(r), fitResult[i], verbose);
+
+        // Fit it!
+        ASMFitResult fitResult = fit(img(r), verbose);
         SimilarityTrans s2;
         s2.Xt = r.x;
         s2.Yt = r.y;
         s2.a = 1;
-        fitResult[i].transformation = s2 * fitResult[i].transformation;
+        fitResult.transformation = s2 * fitResult.transformation;
+        fitResultV.push_back(fitResult);
     }
-    if (faces.size()==0){
-        printf("No face found!\n");
-    }
+    return fitResultV;
 }
 
-void ASMModel::showResult(Mat& img, vector< FitResult >& res)
+void ASMModel::showResult(Mat& img, const vector< ASMFitResult >& res)
 {
     Mat mb;
     if (img.channels()==1)
@@ -227,11 +195,7 @@ void ASMModel::showResult(Mat& img, vector< FitResult >& res)
     ShapeVec sv;
     for (uint i=0; i<res.size(); i++){
         vector< Point_<int> > V;
-        resultToPointList(res[i], V);
-/*        projectParamToShape(res[i].params, sv);
-        sv.restoreToPointList(V, res[i].transformation);*/
-//         for (int j=0; j<V.size(); j++)
-//             printf("%d, %d\n", V[j].x, V[j].y);
+        res[i].toPointList(V);
         shapeInfo.drawMarkPointsOnImg(mb, V, true);
     }
 
@@ -239,16 +203,9 @@ void ASMModel::showResult(Mat& img, vector< FitResult >& res)
         imshow("hoho", mb);
 }
 
-void ASMModel::resultToPointList(const FitResult& fitResult, vector< Point_<int> >& pV)
+ASMFitResult ASMModel::fit(const cv::Mat& img, int verbose)
 {
-    ShapeVec sv;
-    projectParamToShape(fitResult.params, sv);
-    sv.restoreToPointList(pV, fitResult.transformation);
-}
-
-
-void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
-{
+    ASMFitResult fitResult(this);
     // Step 2: Ensure it is a grayscale image
     Mat grayImg;
     if (img.channels() == 3){
@@ -264,7 +221,6 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
     ratio = sqrt( double(40000) / (grayImg.rows * grayImg.cols));
     cv::resize(grayImg, resizedImg, Size(grayImg.cols*ratio, grayImg.rows*ratio));
 
-    //puts("Start fitting...");
     ModelImage curSearch;
     curSearch.setShapeInfo( &shapeInfo );
     curSearch.loadTrainImage(resizedImg);
@@ -383,13 +339,14 @@ void ASMModel::doSearch(const cv::Mat& img, FitResult& fitResult, int verbose)
     SimilarityTrans s2;
     s2.a = 1/ratio;
     fitResult.transformation = s2 * fitResult.transformation;
+    return fitResult;
 }
 
 void ASMModel::loadFromFile(ModelFile& file)
 {
     ShapeModel::loadFromFile(file);
     printf("Loading ASM model from file...\n");
-    //! parameter k for ASM
+
     file.readInt(localFeatureRad);
     file.readInt(ns);
 
@@ -477,6 +434,29 @@ void ASMModel::saveToFile(ModelFile& file)
                     file.writeReal(meanG[i][j](ii, jj));
         }
     }
+}
+
+void ASMModel::loadFromFile(const string& filename)
+{
+    ModelFileAscii mf;
+    mf.openFile(filename.c_str(), "rb");
+    loadFromFile(mf);
+    mf.closeFile();
+}
+
+void ASMModel::saveToFile(const string& filename)
+{
+    ModelFileAscii mf;
+    mf.openFile(filename.c_str(), "wb");
+    saveToFile(mf);
+    mf.closeFile();
+}
+
+
+void ASMFitResult::toPointList(vector< Point_<int> > &pV) const {
+    ShapeVec sv;
+    asmModel->projectParamToShape(params, sv);
+    sv.restoreToPointList(pV, transformation);
 }
 
 } // Namespace

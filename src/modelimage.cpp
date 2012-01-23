@@ -1,14 +1,11 @@
 #include "modelimage.h"
 #include "afreader.h"
-//#include "delaunay.h"
 using std::cerr;
 
 namespace StatModel {
 
-
 ModelImage::ModelImage()
 {
-    //this->points.push_back(Point_<double>(1,1));
     imgLoaded = false;
     this->shapeInfo = NULL;
 }
@@ -18,8 +15,8 @@ bool ModelImage::readPTS( const char * filename )
     AFReader r(filename);
 
     if ( !r.IsValid() ) {
-		printf("File %s not found!\n");
-		throw "";
+        printf("File %s not found!\n");
+        throw "";
         return false;
     }
 
@@ -80,11 +77,11 @@ void ModelImage::initPointsByVector(const std::vector< cv::Point2i >& V)
 bool ModelImage::loadTrainImage()
 {
     if (!imgLoaded){
-	  	Mat img = imread(this->hostImageName);
-		if (img.empty()) {
-		  cerr << "(EE) Loading image " + this->hostImageName + " failed!" << endl;
-		  throw;
-		}
+        Mat img = imread(this->hostImageName);
+        if (img.empty()) {
+            cerr << "(EE) Loading image " + this->hostImageName + " failed!" << endl;
+            throw;
+        }
         loadTrainImage(img);
     }
     return imgLoaded;
@@ -140,18 +137,6 @@ Mat_< double > ModelImage::getLocalStruct(int pId, int k, int level, double step
 {
     this->loadTrainImage();
     vector< Point_< int > > pV;
-//     this->getPointsOnNorm(pId, k+1, level, pV);
-//     Mat_< double > v(2*k+3, 1), diffV(2*k+1, 1);
-
-//     for (int i=k+1;i>=-k-1;i--){
-//         v(i+(k+1), 0) = this->imgPyrGray[level](pV[i+(k+1)]);
-//     }
-//     double absSum = 0;
-//     for (int i=k;i>=-k;i--){
-//         diffV(i+k, 0) = (v(i+1+(k+1), 0) - v(i-1+(k+1), 0));
-//         absSum += fabs(diffV(i+k, 0));
-//     }
-//     diffV *= 1/absSum;
     this->getPointsOnNorm(pId, k, level, pV, step);
     Mat_< double > diffV(2*k+1, 1);
     double absSum = 0;
@@ -161,7 +146,7 @@ Mat_< double > ModelImage::getLocalStruct(int pId, int k, int level, double step
     }
     if (absSum==0){
         printf("Warning: absSum=0....Level: %d, pID: %d\n", level, pId);
-//         show(level, pId);
+        show(level, pId);
     }
     else
         diffV *= 1/absSum;
@@ -271,7 +256,7 @@ void ModelImage::getPointsOnNorm(int pId, int k, int level,
 
 Mat ModelImage::show(int l, int pId, bool showInWin, int highLight)
 {
-    Mat mb;// = curSearch.getTrainImage().clone();
+    Mat mb;
     if (imgPyramid[0].channels()==1)
         cv::cvtColor(imgPyramid[0], mb, CV_GRAY2RGB);
     else
@@ -283,7 +268,6 @@ Mat ModelImage::show(int l, int pId, bool showInWin, int highLight)
         if (pId==-1 || pId!=i)
             continue;
         vector< Point_< int > > pV;
-        // Fixme: the step 1.7
         getPointsOnNorm(i, 4, l, pV, 2, highLight);
         for (int j=0; j<9; j++)
             if (highLight==100/*j-3*/){
@@ -293,19 +277,13 @@ Mat ModelImage::show(int l, int pId, bool showInWin, int highLight)
             else
                 cv::circle(mb, Point_< int >(pV[j].x<<l, pV[j].y<<l), 3, CV_RGB(50, 230, 100),
                        1, CV_AA);
-            //cv::line(mb, Point_< int >(pV[j].x<<l, pV[j].y<<l),
-            //         Point_< int >(pV[j].x<<l, pV[j].y<<l), cv::Scalar(50, 230, 100));
-//            mb.at< cv::Vec3b >(pV[j]) = cv::Vec3b(50, 230, 100);
     }
     if (showInWin){
         cvNamedWindow("hoho", CV_WINDOW_AUTOSIZE);
         cv::imshow("hoho", mb);
-        while (1){
-            unsigned char cc = cv::waitKey(100);
-    //                printf("%d\n", cc);
-            if (cc=='a')
-                break;
-        }
+
+        printf("Press any key to continue...\n");
+        cv::waitKey();
     }
     return mb;
 }

@@ -1,24 +1,8 @@
-/*
-   This library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public
-   License version 2 as published by the Free Software Foundation.
-
-   This library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
-
-   You should have received a copy of the GNU Library General Public License
-   along with this library; see the file COPYING.LIB.  If not, write to
-   the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-   Boston, MA 02110-1301, USA.
-*/
-
 #include "similaritytrans.h"
 #include "shapevec.h"
 
 namespace StatModel {
-void SimilarityTrans::backTransform(const ShapeVec &src, ShapeVec &dst){
+void SimilarityTrans::invTransform(const ShapeVec &src, ShapeVec &dst) const{
     int nP = src.nPoints();
     double x11, x12, x21, x22;
     x11 = a/(a*a+b*b);
@@ -55,8 +39,6 @@ void SimilarityTrans::setTransformByAlign(const ShapeVec &x, const ShapeVec &xp)
     for (int i=0; i<nP; i++)
         b += x.X(i) * xp.Y(i) - x.Y(i)*xp.X(i);
     b /= x.dot(x);
-    //st.s = sqrt(a*a+b*b);
-    //st.theta = atan(b/a);
     double xxm, xym;
     xxm = x.getXMean();
     xym = x.getYMean();
@@ -64,7 +46,7 @@ void SimilarityTrans::setTransformByAlign(const ShapeVec &x, const ShapeVec &xp)
     Yt = -b * xxm - a * xym + xp.getYMean();
 }
 
-void SimilarityTrans::warpImage(const Mat &imgSrc, Mat &imgDst)
+void SimilarityTrans::warpImage(const Mat &imgSrc, Mat &imgDst) const
 {
     Mat_< double > M(2, 3);
     M<< a, -b, Xt,
@@ -72,13 +54,12 @@ void SimilarityTrans::warpImage(const Mat &imgSrc, Mat &imgDst)
     cv::warpAffine(imgSrc, imgDst, M, imgSrc.size(), cv::INTER_LINEAR);
 }
 
-void SimilarityTrans::warpImgBack(const cv::Mat& imgSrc, Mat& imgDst, bool useDstSize)
+void SimilarityTrans::warpImgBack(const cv::Mat& imgSrc, Mat& imgDst, bool useDstSize) const
 {
 
     Mat_< double > M(2, 3), mV;
     M<< a, -b, Xt,
         b,  a, Yt;
-    //cv::invertAffineTransform(M, mV);
     if (useDstSize)
         cv::warpAffine(imgSrc, imgDst, M, imgDst.size(), cv::INTER_LINEAR|cv::WARP_INVERSE_MAP);
     else

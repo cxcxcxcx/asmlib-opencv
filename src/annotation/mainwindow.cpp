@@ -11,26 +11,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     ui->graphicsView->allowAddPoints = false;
-
-    //Fixme: rel path needed
-    QString ptsName = "/home/chenxing/myProj/aamlib-opencv/data/feret_color/00220_940128_fa.ppm.pts75";
-    QString imgName = ptsName.left(ptsName.lastIndexOf('.'));
-    ui->viewRef->setImage(imgName);
-
-    FILE *fp=fopen(ptsName.toLocal8Bit(), "r");
-    QList<QPoint> ql;
-    if (fp){
-        int n;
-        int a,b;
-        fscanf(fp, "%d", &n);
-        for (int i=0;i<n;i++){
-            fscanf(fp, "%d %d", &a,&b);
-            ql.push_back(QPoint(a, b));
-        }
-        fclose(fp);
-        ui->viewRef->setPointList(ql);
-    }
-
 }
 
 MainWindow::~MainWindow()

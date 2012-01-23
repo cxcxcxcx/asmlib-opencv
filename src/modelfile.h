@@ -80,7 +80,7 @@ namespace StatModel {
 //         FILE *fp;
 // };
 
-
+//! Save/Load model to/from a file.
 class ModelFile
 {
     public:

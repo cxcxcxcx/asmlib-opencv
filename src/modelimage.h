@@ -16,6 +16,7 @@ using cv::Size;
 
 namespace StatModel {
 
+//! Image and image related operations.
 class ModelImage
 {
 protected:

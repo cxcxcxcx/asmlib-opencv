@@ -18,25 +18,75 @@ using std::endl;
 
 using namespace StatModel;
 
+//! Build an ASM model.
 void buildASMModel(ASMModel & asmModel,
                    string shapeDef, string ptsList, string modelPath)
 {
-    ModelFileAscii mf;
-    asmModel.loadShapeInfo((shapeDef).c_str());
-    asmModel.readTrainData((ptsList).c_str());
-    asmModel.buildModel();
-
-    mf.openFile(modelPath.c_str(), "wb");
-    asmModel.saveToFile(mf);
-    mf.closeFile();
+    asmModel.buildModel(shapeDef, ptsList);
+    asmModel.saveToFile(modelPath);
 }
 
+//! Load an ASM model.
 void readASMModel(ASMModel & asmModel, string modelPath)
 {
-    ModelFileAscii mf;
-    mf.openFile(modelPath.c_str(), "rb");
-    asmModel.loadFromFile(mf);
-    mf.closeFile();
+    asmModel.loadFromFile(modelPath);
+}
+
+//! Run OpenCV object detection and do ASM fitting on each detected object.
+void searchAndFit(
+        ASMModel & asmModel,
+        cv::CascadeClassifier &objCascadeClassfifier,
+        const string & picPath,
+        int verboseL) {
+    // Load image.
+    Mat img = cv::imread(picPath);
+    if (img.empty()) {
+        cerr << "Load image '" << picPath << "' failed." << endl;
+        exit(2);
+    }
+
+    // Face detection.
+    vector< cv::Rect > faces;
+    objCascadeClassfifier.detectMultiScale(
+        img, faces,
+        1.2, 2, CV_HAAR_SCALE_IMAGE, Size(60, 60) );
+
+    // Fit to ASM!
+    vector < ASMFitResult > fitResult = asmModel.fitAll(img, faces, verboseL);
+    asmModel.showResult(img, fitResult);
+    cvWaitKey();
+}
+
+//! ASM on webcam stream!
+void asmOnWebCam(
+        ASMModel & asmModel,
+        cv::CascadeClassifier &objCascadeClassfifier,
+        int verboseL) {
+    Mat img, imgT;
+    cv::VideoCapture capture;
+    capture.open(0);
+    if (!capture.isOpened()) {
+        cerr << "Failed to open your webcam." << endl;
+        exit(2);
+    }
+    while (cvWaitKey(5) == -1) {
+        capture >> imgT;
+        cv::flip(imgT, img, 1);
+
+        vector< cv::Rect > faces;
+        // Do face detection first.
+        // Note: ONLY the largest face is processed.
+        //       (otherwise face detection would be too slow)
+        objCascadeClassfifier.detectMultiScale( img, faces,
+            1.2, 2, CV_HAAR_FIND_BIGGEST_OBJECT
+                        //|CV_HAAR_DO_ROUGH_SEARCH
+                        |CV_HAAR_SCALE_IMAGE
+            , Size(60, 60) );
+
+        // Fit to ASM!
+        vector < ASMFitResult > fitResult = asmModel.fitAll(img, faces, verboseL);
+        asmModel.showResult(img, fitResult);
+    }
 }
 
 void showHelp()
@@ -162,7 +212,6 @@ int main(int argc, char *argv[])
             }
 
             Mat img, imgT;
-            vector < FitResult > fitResult;
             cv::CascadeClassifier faceCascade;
             if (!faceCascade.load(faceCascadePath)) {
                 showHelp();
@@ -172,28 +221,9 @@ int main(int argc, char *argv[])
                 exit(1);
             }
             if (picPath == "c") {
-                cv::VideoCapture capture;
-                capture.open(0);
-                if (!capture.isOpened()) {
-                    cerr << "Failed to open your webcam." << endl;
-                    exit(2);
-                }
-                while (cvWaitKey(5) == -1) {
-                    capture >> imgT;
-                    cv::flip(imgT, img, 1);
-                    asmModel.fit(img, fitResult, faceCascade, true,
-                                 verboseL);
-                    asmModel.showResult(img, fitResult);
-                }
+                asmOnWebCam(asmModel, faceCascade, verboseL);
             } else {
-                img = cv::imread(picPath);
-                if (img.empty()) {
-                    cerr << "Load image '" << picPath << "' failed." << endl;
-                    exit(2);
-                }
-                asmModel.fit(img, fitResult, faceCascade, true, verboseL);
-                asmModel.showResult(img, fitResult);
-                cvWaitKey();
+                searchAndFit(asmModel, faceCascade, picPath, verboseL);
             }
         }
     }
