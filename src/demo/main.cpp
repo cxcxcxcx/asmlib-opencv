@@ -1,7 +1,6 @@
 // vim: ci:ts=4:sw=4:et
 #include "asmmodel.h"
 #include "modelfile.h"
-#include "util.h"
 #ifdef __GNUG__
 #include <unistd.h>
 #else

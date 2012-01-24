@@ -3,6 +3,7 @@
 
 #include "afreader.h"
 #include "modelfile.h"
+#include "shapevec.h"
 
 using cv::Mat;
 using cv::Point;

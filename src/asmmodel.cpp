@@ -1,5 +1,4 @@
 #include "asmmodel.h"
-#include "util.h"
 #include <cstdio>
 
 namespace StatModel {
