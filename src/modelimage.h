@@ -1,5 +1,5 @@
-#ifndef SHAPE_H
-#define SHAPE_H
+#ifndef MODELIMAGE_H
+#define MODELIMAGE_H
 #include <string>
 #include <vector>
 #include "cv.h"
@@ -113,4 +113,4 @@ public:
 };
 
 } // Namespace
-#endif // SHAPE_H
+#endif // MODELIMAGE_H
