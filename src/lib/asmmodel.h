@@ -130,7 +130,6 @@ public:
     //! Show the result in the image
     void showResult(Mat &img, const vector< ASMFitResult > &res);
 
-private:
     //! Find the best parameter and transformation for the given shape.
     /*!
         \param ShapeVec a shape vector
@@ -138,6 +137,7 @@ private:
     */
     void findParamForShape(const ShapeVec &Y, ASMFitResult & fitResult);
 
+private:
     //! Use Bayesian Tangent Shape Model to find best parameter and transformation for the given shape
     /*!
         \param l level in image pyramid.
