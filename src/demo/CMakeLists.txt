@@ -5,4 +5,4 @@ SET(TEST_SRC main.cpp XGetopt.cpp)
 INCLUDE_DIRECTORIES( ../lib/ )
 
 ADD_EXECUTABLE( demo ${TEST_SRC})
-TARGET_LINK_LIBRARIES( demo ${OpenCV_LIBS} asm)
+TARGET_LINK_LIBRARIES( demo asm ${OpenCV_LIBS})
