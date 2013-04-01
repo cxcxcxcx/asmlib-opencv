@@ -1,7 +1,10 @@
 #ifndef ASMMODEL_H
 #define ASMMODEL_H
-#include "shapemodel.h"
+
 #include "cv.h"
+#include "featureextracter.h"
+#include "feature_extracter_normline_noscaling.h"
+#include "shapemodel.h"
 
 /*! \mainpage asmlib-opencv Documentation
  *
@@ -60,6 +63,27 @@ public:
     void toPointList(vector< Point_<int> > &pV) const;
 };
 
+// class FeatureExtracterFactory {
+// public:
+//     FeatureExtracter *getFeatureExtracter(const Mat &image) {
+//         FeatureExtracter *newFE = new (*featureExtracter);
+//         newFE->loadImage(image);
+//         return newFE;
+//     }
+//     void loadFromFile(ShapeInfo &shapeInfo, int localFeatureRad, int searchStepAreaRatio) {
+//         //! parameter ns for ASM:
+//         /*!
+//         * Number of pixels to search on the normal direction.
+//         */
+//         int ns = 6;
+//
+//         featureExtracter = new FeatureExtracterNormLineNoScaling(
+//             shapeInfo, localFeatureRad, ns, searchStepAreaRatio);
+//     }
+// private:
+//     FeatureExtracter *featureExtracter;
+// };
+
 //! Active Shape Model
 /**
  * \ingroup API
@@ -73,11 +97,6 @@ private:
     //! Mean vector pyramids for each landmark point
     vector< vector< Mat_< double > > > meanG;
 
-    //! parameter k for ASM
-    int localFeatureRad;
-
-    //! parameter ns for ASM
-    int ns;
 
     //! Build statistic models for local difference at each landmark point.
     /// \note This is used when calculating Mahalanobis distance
@@ -86,12 +105,31 @@ private:
     PCA pcaPyr[3];
     double sigma2Pyr[3];
 
+    //! parameter k for ASM
+    int localFeatureRad;
+    //! parameter ns for ASM:
+    /*!
+    * Number of pixels to search on the normal direction.
+    */
+    int ns;
+
+    FeatureExtracter *featureExtracter;
+
 public:
     //! Empty ASM model.
-    ASMModel():localFeatureRad(4), ns(6){}
+    ASMModel() : localFeatureRad(4), ns(6) {
+        featureExtracter = new FeatureExtracterNormLineNoScaling(
+            localFeatureRad, ns);
+    }
 
     //! Initialize by a file.
-    ASMModel(const string& filename) { loadFromFile(filename); }
+    ASMModel(const string& filename) {
+        loadFromFile(filename); }
+
+    virtual ~ASMModel() {
+        if (featureExtracter != NULL)
+            delete featureExtracter;
+    }
 
     //! Search for objects (e.g. faces) in image, and run ASM on each object.
     /*!

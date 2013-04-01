@@ -32,6 +32,15 @@ class ShapeModel
 public:
     ShapeModel();
 
+    virtual ~ShapeModel() {
+        if (this->pcaFullShape) {
+            delete pcaFullShape;
+        }
+        if (pcaShape) {
+            delete pcaShape;
+        }
+    }
+
     //! Save the model into a file
     virtual void saveToFile(ModelFile &file);
 
@@ -147,7 +156,7 @@ private:
     //! Find patterns~
     void preparePatterns();
 
-protected:
+public:
     //! r.y -= r.height*?
     double searchYOffset;
 

@@ -26,13 +26,6 @@ protected:
     /// Optional 'host image' filename including full path.
     string hostImageName;
 
-    /// the training image
-    Mat imgdata;
-
-    /// Image pyramid
-    vector< Mat > imgPyramid;
-    vector< Mat_<double> > imgPyrGrayDeriv;
-    vector< Mat_<uchar> > imgPyrGray;
 
     /// Is the image loaded?
     bool imgLoaded;
@@ -40,12 +33,16 @@ protected:
     /// Information about shapes and paths.
     ShapeInfo *shapeInfo;
 
+
 public:
     /// Landmark points
     vector< Point_< int > > points;
 
     /// Shape vectors
     ShapeVec shapeVec;
+
+    /// the training image
+    Mat imgdata;
 
     /// Load training image from saved host image
     bool loadTrainImage();
@@ -55,37 +52,11 @@ public:
 
     void setShapeInfo(ShapeInfo *si){ shapeInfo = si; }
 
-
     /// Release Training Image
     bool releaseTrainImage();
 
-    /// Get local structure
-    /*!
-        \param pId id of the point
-        \param k how many points to get on either direction
-        \param level position in the pyramid level
-        \param step VERY IMPORTANT, for a image with area of 10000, 1.0 may be a good choice
-    */
-    Mat_< double > getLocalStruct(int pId, int k, int level, double step);
-
-    /// Get the coordinates of points at normal direction of a landmark point
-    /*!
-        \param pId id of the point
-        \param k how many points to get on either direction
-        \param level position in the pyramid level
-        \param V the vector that save results.
-        \param step VERY IMPORTANT, for a image with area of 10000, 1.0 may be a good choice
-        \param pOffset when searching for best points, use the p'th  point along the profile as the center
-    */
-    void getPointsOnNorm(int pId, int k, int level,
-                         vector< Point_< int > > &V,
-                         double step, int pOffset=0);
-
-    //! Get the image saved at specified level
-    Mat & getTrainImage(int level=0, bool gray=false);
-
-    /// Return the derivative image at specified level;
-    Mat & getDerivImage(int level){ return imgPyrGrayDeriv[level]; }
+//     //! Get the image saved at specified level
+//     Mat & getTrainImage(int level=0, bool gray=false);
 
     /// Host image (if any).
     inline const string &HostImage() const { return hostImageName; }

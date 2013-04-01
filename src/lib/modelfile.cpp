@@ -31,7 +31,7 @@ void ModelFile::writePCA(const PCA* p)
             writeReal(p->eigenvectors.at<double>(i, j));
     for (i=0;i<rows;i++)
         writeReal(p->eigenvalues.at<double>(i, 0));
-    
+
     for (i=0;i<cols;i++)
         writeReal(p->mean.at<double>(i, 0));
 }

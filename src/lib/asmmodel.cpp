@@ -1,5 +1,6 @@
-#include "asmmodel.h"
 #include <cstdio>
+
+#include "asmmodel.h"
 
 namespace StatModel {
 
@@ -13,40 +14,35 @@ void ASMModel::buildModel(const string& shapeDefFile, const string& ptsListFile)
 
 void ASMModel::buildLocalDiffStructure()
 {
-    int i, j, l;
-    // First, we have find a proper "step" based on the size of face
-    int xMin, xMax, yMin, yMax;
-    vector< double > myStep;
-    myStep.resize(nTrain);
-    for (i=0; i<nTrain; i++){
-        xMin = yMin = 100000000;
-        xMax = yMax = 0;
-        for (j=0; j<nMarkPoints; j++){
-            if (imageSet[i].points[j].x < xMin)
-                xMin = imageSet[i].points[j].x;
-            if (imageSet[i].points[j].y < yMin)
-                yMin = imageSet[i].points[j].y;
-            if (imageSet[i].points[j].x > xMax)
-                xMax = imageSet[i].points[j].x;
-            if (imageSet[i].points[j].y > yMax)
-                yMax = imageSet[i].points[j].y;
-        }
-        myStep[i] = 1.3* sqrt( (xMax-xMin)*(yMax-yMin) / 10000.);
-//         printf("step: %f\n", myStep[i]);
+    // Dirty hack...
+    featureExtracter->setShapeInfo(shapeInfo);
+    FeatureExtracterNormLineNoScaling *pNoScaling = dynamic_cast<FeatureExtracterNormLineNoScaling*>(featureExtracter);
+    if (pNoScaling != NULL) {
+        pNoScaling->searchStepAreaRatio_ = searchScaleRatio;
+    }
+    vector<FeatureExtracter *> featureExtracterL;
+    for (int i = 0; i < nTrain; ++i) {
+        imageSet[i].loadTrainImage();
+        FeatureExtracter *pFE = featureExtracter->clone();
+        pFE->loadImage(imageSet[i].imgdata);
+        featureExtracterL.push_back(pFE);
     }
 
     Mat_< double > *tCovar, *tMean;
-    Mat_< double > datMat(2*localFeatureRad+1, nTrain);
+    Mat_< double > datMat;
     meanG.resize(this->pyramidLevel + 1);
     iCovarG.resize(this->pyramidLevel + 1);
-    for (l = 0; l <= pyramidLevel; l++){
-        for (i = 0; i<nMarkPoints; i++){
+    for (int l = 0; l <= pyramidLevel; l++){
+        for (int i = 0; i < nMarkPoints; i++){
             tCovar = new Mat_< double >;
             tMean = new Mat_< double >;
-            for (j = 0; j<nTrain; j++){
-                Mat_<double> M;
-                M = datMat.col(j);
-                imageSet[j].getLocalStruct(i,localFeatureRad,l, myStep[j]).copyTo(M);
+            for (int j = 0; j< nTrain; j++){
+                Mat m = featureExtracterL[j]->getFeature(imageSet[j].points, i, l);
+                if (datMat.empty()) {
+                    // On the first call, prepare the matrix.
+                    datMat.create(m.rows, nTrain);
+                }
+                m.copyTo(datMat.col(j));
             }
             cv::calcCovarMatrix(datMat, *tCovar, *tMean,
                                 CV_COVAR_NORMAL|CV_COVAR_COLS);
@@ -56,6 +52,9 @@ void ASMModel::buildLocalDiffStructure()
             delete tMean;
             delete tCovar;
         }
+    }
+    for (int i = 0; i < nTrain; ++i) {
+        delete featureExtracterL[i];
     }
 }
 
@@ -238,22 +237,18 @@ ASMFitResult ASMModel::fit(const cv::Mat& img, int verbose)
     curSearch.buildFromShapeVec(st);
 
     pyramidLevel = 2;
-    int k=localFeatureRad;
-
-    ns=4;
 
     // sum of offsets of current iteration.
     int totalOffset;
     if (verbose >= ASM_FIT_VERBOSE_AT_LEVEL)
         curSearch.show();
+
+    featureExtracter->loadImage(resizedImg);
     // Update each point
-    vector< Point_< int > > V;
-    for (int l=this->pyramidLevel; l>=0; l--){
+    for (int level=this->pyramidLevel; level>=0; level--){
         if (verbose >= ASM_FIT_VERBOSE_AT_LEVEL)
-            printf("Level %d\n", l);
-        Mat_<double> img=curSearch.getDerivImage(l);
+            printf("Level %d\n", level);
 //         printf("Image size: %dx%d\n", img.cols, img.rows);
-        // at most 5 iterations for each level
         int runT;
         double avgMov;
         for (runT=0; runT<10; runT++){
@@ -266,28 +261,26 @@ ASMFitResult ASMModel::fit(const cv::Mat& img, int verbose)
                 if (verbose >= ASM_FIT_VERBOSE_AT_POINT)
                     printf("Dealing point %d...\n", i);
 
-                Mat_< double > nrmV(2*k+1, 1);
                 double curBest=-1, ct;
                 int bestI = 0;
-                double absSum;
-                for (int e=ns; e>=-ns; e--){
-                    curSearch.getPointsOnNorm(i, k, l, V, 2*searchStepAreaRatio, e);
 
-                    absSum = 0;
-                    for (int j=-k;j<=k;j++){
-                        nrmV(j+k, 0) = img(V[j+k]);
-                        absSum += fabs(nrmV(j+k, 0));
+                vector< cv::Point2i > candidatePoints;
+                vector< Mat_< FeatureDataType > > features;
+                featureExtracter->getCandidatesWithFeature(
+                    curSearch.points, i,
+                    level, candidatePoints, features);
+
+                for (int j = 0; j < candidatePoints.size(); ++j) {
+                    ct = cv::Mahalanobis(features[j], this->meanG[level][i], this->iCovarG[level][i]);
+                    if (verbose >= ASM_FIT_VERBOSE_AT_POINT) {
+                        printf("ct: %lf\n", ct);
+                        curSearch.show(level, i, true, j);
                     }
-                    nrmV *= 1/absSum;
-                    ct = cv::Mahalanobis(nrmV, this->meanG[l][i], this->iCovarG[l][i]);
-//                     printf("absSum: %lf, ct: %lf\n", absSum, ct);
-                    if (verbose >= ASM_FIT_VERBOSE_AT_POINT)
-                        curSearch.show(l, i, true, e);
 
                     if (ct<curBest || curBest<0){
                         curBest = ct;
-                        bestI = e;
-                        bestEP[i] = V[k];
+                        bestI = j;
+                        bestEP[i] = candidatePoints[j];
                     }
                 }
 //                 printf("best e: %d\n", bestI);
@@ -295,25 +288,25 @@ ASMFitResult ASMModel::fit(const cv::Mat& img, int verbose)
                 totalOffset += abs(bestI);
 
                 if (verbose >= ASM_FIT_VERBOSE_AT_POINT)
-                    curSearch.show(l, i, true, bestI);
+                    curSearch.show(level, i, true, bestI);
             }
             for (int i=0;i<nMarkPoints;i++){
                 curSearch.points[i] = bestEP[i];
-                curSearch.points[i].x <<= l;
-                if (l>0) curSearch.points[i].x += (1<<(l-1));
-                curSearch.points[i].y <<= l;
-                if (l>0) curSearch.points[i].y += (1<<(l-1));
+                curSearch.points[i].x <<= level;
+                if (level>0) curSearch.points[i].x += (1<<(level-1));
+                curSearch.points[i].y <<= level;
+                if (level>0) curSearch.points[i].y += (1<<(level-1));
             }
             curSearch.shapeVec.fromPointList(curSearch.points);
 
             if (verbose >= ASM_FIT_VERBOSE_AT_ITERATION)
-                curSearch.show(l);
+                curSearch.show(level);
 
             // Project to PCA model and then back
             //findParamForShape(curSearch.shapeVec,  fitResult);
-            findParamForShapeBTSM(curSearch.shapeVec, shape_old, fitResult, fitResult, l);
+            findParamForShapeBTSM(curSearch.shapeVec, shape_old, fitResult, fitResult, level);
 
-            pcaPyr[l].backProject(fitResult.params, sv);
+            pcaPyr[level].backProject(fitResult.params, sv);
 
             // Reconstruct new shape
             curSearch.buildFromShapeVec(fitResult.transformation);
@@ -321,7 +314,7 @@ ASMFitResult ASMModel::fit(const cv::Mat& img, int verbose)
             avgMov = (double)totalOffset/nMarkPoints;
             if (verbose >= ASM_FIT_VERBOSE_AT_ITERATION){
                 printf("Iter %d:  Average offset: %.3f\n", runT+1, avgMov);
-                curSearch.show(l);
+                curSearch.show(level);
             }
 
             if (avgMov < 1.3){
@@ -331,7 +324,7 @@ ASMFitResult ASMModel::fit(const cv::Mat& img, int verbose)
         }
         if (verbose == ASM_FIT_VERBOSE_AT_LEVEL){
             printf("%d iterations. average offset for last iter: %.3f\n", runT, avgMov);
-            curSearch.show(l);
+            curSearch.show(level);
         }
     }
 
@@ -403,6 +396,14 @@ void ASMModel::loadFromFile(ModelFile& file)
 
     /*sigma2Pyr[2] = sigma2Pyr[1] = */sigma2Pyr[0] = sigma2;
     /*pcaPyr[2] = pcaPyr[1]= */pcaPyr[0] = *pcaShape;
+
+    featureExtracter->setShapeInfo(shapeInfo);
+
+    // Dirty hack...
+    FeatureExtracterNormLineNoScaling *pNoScaling = dynamic_cast<FeatureExtracterNormLineNoScaling*>(featureExtracter);
+    if (pNoScaling != NULL) {
+        pNoScaling->searchStepAreaRatio_ = searchScaleRatio;
+    }
 }
 
 void ASMModel::saveToFile(ModelFile& file)

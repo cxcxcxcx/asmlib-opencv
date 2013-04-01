@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <highgui.h>
+#include <stdexcept>
 #include "shapemodel.h"
 #include "asmmodel.h"
 #include "afreader.h"
@@ -61,32 +62,36 @@ void ShapeModel::readTrainData(const char *listFileName)
         listDir = "./";
 
     FILE *fp = fopen(listFileName,"r");
-    if (fp==NULL){
-        printf("ERROR! list file %s not found!!", listFileName);
-        throw("ERROR! list file not found!!");
+    if (fp == NULL){
+        printf("ERROR! list file %s not found!!\n", listFileName);
+        throw std::runtime_error("ERROR! list file not found!!");
     }
     printf("Reading data from %s...\n", listFileName);
-    ModelImage *ss;
     char sBuf[300];
     int l;
     string ptsPath;
     while (!feof(fp)){
-        char * nk=fgets(sBuf,300,fp);
-        l=strlen(sBuf);
-        if (nk>0 && sBuf[l-1]=='\n')
-            sBuf[l-1]=0;
-        if (nk==0 || sBuf[0]==0)
-            continue;
-        if (sBuf[0]=='/')
+        char *nk = fgets(sBuf,300,fp);
+        if (nk == NULL || sBuf[0] == '\0') {
+            if (feof(fp))
+                continue;
+            else
+                throw std::runtime_error("Reading file failed!");
+        }
+        l = strlen(sBuf);
+        if (sBuf[l - 1] == '\n')
+            sBuf[l - 1] = 0;
+
+        // Relative path or absolute path.
+        if (sBuf[0] == '/')
             ptsPath = sBuf;
         else
             ptsPath = listDir + sBuf;
 
-        ss = new ModelImage();
-        ss->readPTS(ptsPath.data());
-        ss->setShapeInfo( &shapeInfo );
-        this->imageSet.push_back(*ss);
-        delete ss;
+        ModelImage ss;
+        ss.readPTS(ptsPath.data());
+        ss.setShapeInfo(&shapeInfo);
+        this->imageSet.push_back(ss);
     }
     this->nTrain = imageSet.size();
     this->nMarkPoints = imageSet[0].NPoints();
