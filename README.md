@@ -1,3 +1,5 @@
+Note: Consider trying "stasm", which is better maintained and included lots of improvements..
+
 ![](https://raw.githubusercontent.com/cxcxcxcx/asmlib-opencv/wiki/me.jpg)
 
 An open source Active Shape Model library written by C++ using OpenCV 2.0 (or above), no other dependencies. Thanks to CMake, the library has been successfully compiled in following environments:
