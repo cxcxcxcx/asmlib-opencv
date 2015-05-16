@@ -1,4 +1,4 @@
-![http://asmlib-opencv.googlecode.com/svn/wiki/me.jpg](http://asmlib-opencv.googlecode.com/svn/wiki/me.jpg)
+![](https://raw.githubusercontent.com/cxcxcxcx/asmlib-opencv/wiki/me.jpg)
 
 An open source Active Shape Model library written by C++ using OpenCV 2.0 (or above), no other dependencies. Thanks to CMake, the library has been successfully compiled in following environments:
   * Linux (both 32 and 64 bits)
