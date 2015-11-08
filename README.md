@@ -9,10 +9,10 @@ An open source Active Shape Model library written by C++ using OpenCV 2.0 (or ab
   * Android
 Both training and fitting codes are provided. For Windows users, a binary demo is available for [download](http://code.google.com/p/asmlib-opencv/downloads/list).
 
-The library implements ASM and BTSM(Bayesian Tangent Shape Model). I think its result is good for most frontal faces. The fitting speed is fast, on my laptop computer(Intel(R) Core(TM)2 Duo CPU P8600 @ 2.40GHz), it can do real-time fitting on a webcam (see [RunningDemo](RunningDemo.md)).
+The library implements ASM and BTSM(Bayesian Tangent Shape Model). I think its result is good for most frontal faces. The fitting speed is fast, on my laptop computer(Intel(R) Core(TM)2 Duo CPU P8600 @ 2.40GHz), it can do real-time fitting on a webcam (see [RunningDemo](https://github.com/cxcxcxcx/asmlib-opencv/wiki/RunningDemo)).
 
 
-With the code provided, you can also train your own model all by yourself (see [BuildModel](BuildModel.md)). For face model, scripts to train a model from the [MUCT Dataset](http://www.milbo.org/muct/) are provided.
+With the code provided, you can also train your own model all by yourself (see [BuildModel](https://github.com/cxcxcxcx/asmlib-opencv/wiki/BuildModel)). For face model, scripts to train a model from the [MUCT Dataset](http://www.milbo.org/muct/) are provided.
 
 **Codes are in the SVN repository, click "Source" to check them out. Documentation for the codes is available [here](http://chenxing.name/docs/asmlib/).**
 
