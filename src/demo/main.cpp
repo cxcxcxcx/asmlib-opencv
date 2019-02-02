@@ -9,7 +9,7 @@
 
 #include <cstdio>
 #include <string>
-#include "highgui.h"
+#include <opencv2/highgui.hpp>
 using std::string;
 using cv::imshow;
 using std::cerr;
@@ -48,12 +48,12 @@ void searchAndFit(
     vector< cv::Rect > faces;
     objCascadeClassfifier.detectMultiScale(
         img, faces,
-        1.2, 2, CV_HAAR_SCALE_IMAGE, Size(60, 60) );
+        1.2, 2, cv::CASCADE_SCALE_IMAGE, Size(60, 60) );
 
     // Fit to ASM!
     vector < ASMFitResult > fitResult = asmModel.fitAll(img, faces, verboseL);
     asmModel.showResult(img, fitResult);
-    cvWaitKey();
+    cv::waitKey();
 }
 
 //! ASM on webcam stream!
@@ -68,7 +68,7 @@ void asmOnWebCam(
         cerr << "Failed to open your webcam." << endl;
         exit(2);
     }
-    while (cvWaitKey(5) == -1) {
+    while (cv::waitKey(5) == -1) {
         capture >> imgT;
         cv::flip(imgT, img, 1);
 
@@ -77,9 +77,9 @@ void asmOnWebCam(
         // Note: ONLY the largest face is processed.
         //       (otherwise face detection would be too slow)
         objCascadeClassfifier.detectMultiScale( img, faces,
-            1.2, 2, CV_HAAR_FIND_BIGGEST_OBJECT
+            1.2, 2, cv::CASCADE_FIND_BIGGEST_OBJECT
                         //|CV_HAAR_DO_ROUGH_SEARCH
-                        |CV_HAAR_SCALE_IMAGE
+                        | cv::CASCADE_SCALE_IMAGE
             , Size(60, 60) );
 
         // Fit to ASM!
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
         readASMModel(asmModel, modelFile);
         if (action == "view") {
             asmModel.viewShapeModel();
-            cvWaitKey();
+            cv::waitKey();
         } else if (action == "fit") {
             if (picPath == "") {
                 showHelp();

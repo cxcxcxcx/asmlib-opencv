@@ -1,9 +1,11 @@
 #include <cstdio>
-#include <highgui.h>
+//#include <highgui.h>
 #include <stdexcept>
 #include "shapemodel.h"
 #include "asmmodel.h"
 #include "afreader.h"
+
+using std::cout;
 
 namespace StatModel {
 
@@ -21,6 +23,8 @@ void ShapeModel::loadShapeInfo(const char* shapeFileName)
     FILE *fp = shapeDefFile.FH();
 
     nMarkPoints = shapeInfo.loadFromShapeDescFile(shapeDefFile);
+
+    cout << "nMarkPoints:" << nMarkPoints << endl;
 
     // r.y -= r.height*?
     shapeDefFile.Sync();
@@ -94,7 +98,9 @@ void ShapeModel::readTrainData(const char *listFileName)
         this->imageSet.push_back(ss);
     }
     this->nTrain = imageSet.size();
-    this->nMarkPoints = imageSet[0].NPoints();
+    cout << "nMarkPoints:" << nMarkPoints << endl;
+    assert(nMarkPoints == imageSet[0].NPoints());
+    cout << "nMarkPointsAfter:" << nMarkPoints << endl;
     fclose(fp);
 }
 
@@ -105,6 +111,7 @@ void ShapeModel::buildModel(const string& shapeDefFile, const string& ptsListFil
 
     this->alignShapes();
     this->buildPCA();
+    cout << "nMarkPoints:" << nMarkPoints << endl;
     //preparePatterns();
 }
 
@@ -149,7 +156,7 @@ void ShapeModel::buildPCA()
             pca_data(j, i) = (imageSet[i].shapeVec)(j, 0);
     }
     printf("(II) Calculating PCA of shape vectors.\n");
-    pcaShape = new PCA(pca_data, Mat_<double>(), CV_PCA_DATA_AS_COL, 0);
+    pcaShape = new PCA(pca_data, Mat_<double>(), PCA::DATA_AS_COL, 0);
     double eigValueSum, sCur;
     eigValueSum = cv::sum(pcaShape->eigenvalues)[0];
     sCur = 0;
@@ -345,7 +352,7 @@ void viewShapeUpdateCurParam(int pos, void *data)
 {
     ShapeModel::ModelViewInfo *pInfo = (ShapeModel::ModelViewInfo *)data;
     pInfo->curParam = pos;
-    cvSetTrackbarPos("param value", "Viewing Shape Model",
+    cv::setTrackbarPos("param value", "Viewing Shape Model",
                    pInfo->vList[pos]);
 }
 
@@ -380,7 +387,7 @@ void ShapeModel::viewShapeModel()
     viewShapeModelUpdate(&vData);
     q1 = 15;
     q2 = 0;
-    namedWindow("Viewing Shape Model", CV_WINDOW_AUTOSIZE);
+    namedWindow("Viewing Shape Model", cv::WINDOW_AUTOSIZE);
     createTrackbar("param value", "Viewing Shape Model",
                    &q1, 30, &viewShapeUpdateValue, &vData);
     createTrackbar("which param", "Viewing Shape Model",

@@ -65,4 +65,10 @@ void SimilarityTrans::warpImgBack(const cv::Mat& imgSrc, Mat& imgDst, bool useDs
     else
         cv::warpAffine(imgSrc, imgDst, M, imgSrc.size(), cv::INTER_LINEAR|cv::WARP_INVERSE_MAP);
 }
+
+std::ostream& operator<<(std::ostream& os, const SimilarityTrans& st)
+{
+    os << "a: " << st.a << ", b:" << st.b << ", Xt:" << st.Xt << ", Yt:" << st.Yt;
+    return os;
+}
 } // Namespace

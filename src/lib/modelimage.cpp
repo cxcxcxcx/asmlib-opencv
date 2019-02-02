@@ -1,5 +1,6 @@
 #include "modelimage.h"
 #include "afreader.h"
+#include <fstream>
 using std::cerr;
 
 namespace StatModel {
@@ -10,8 +11,38 @@ ModelImage::ModelImage()
     this->shapeInfo = NULL;
 }
 
-bool ModelImage::readPTS( const char * filename )
-{
+bool ModelImage::tryReadIBugPts(const char* filename) {
+    std::ifstream fin;
+    fin.open(filename);
+    string placeHolder;
+    int version;
+    fin >> placeHolder >> version;
+    if (placeHolder != "version:") {
+//         cout << "version not found: " << placeHolder << endl;
+        return false;
+    }
+    if (version != 1) {
+        cerr << "iBug version mismatch!" << std::endl;
+        return false;
+    }
+    int npoints;
+    fin >> placeHolder >> npoints;
+    fin >> placeHolder;  // {
+    points.resize(npoints);
+    for (int i = 0; i < npoints; ++i) {
+        double x, y;
+        fin >> x >> y;
+        // fin >> points[i].x >> points[i].y;
+        points[i].x = x;
+        points[i].y = y;
+//         cout << points[i].x << " " << points[i].y << endl;
+    }
+    fin >> placeHolder;  // }
+    fin.close();
+    return true;
+}
+
+bool ModelImage::tryReadOldPts(const char* filename) {
     AFReader r(filename);
 
     if ( !r.IsValid() ) {
@@ -32,7 +63,6 @@ bool ModelImage::readPTS( const char * filename )
     fscanf( r.FH(), "%i", &npoints );
     fgetc(r.FH());
 
-    this->nMarkPoints = npoints;
 
     // resize this shape
     this->points.resize(npoints);
@@ -50,6 +80,18 @@ bool ModelImage::readPTS( const char * filename )
         points[i].x = ix;
         points[i].y = iy;
     }
+    return true;
+}
+
+bool ModelImage::readPTS( const char * filename )
+{
+    if (!tryReadIBugPts(filename)) {
+        if (!tryReadOldPts(filename)) {
+            std::cerr << "Couldn't parse " << filename << endl;
+            return false;
+        }
+    }
+    this->nMarkPoints = points.size();
     shapeVec.fromPointList(points);
 
 
@@ -91,6 +133,7 @@ bool ModelImage::loadTrainImage()
 bool ModelImage::loadTrainImage(const Mat& img)
 {
     imgdata = img;
+    return true;
 }
 
 void ModelImage::buildFromShapeVec(SimilarityTrans& trans)
@@ -109,11 +152,16 @@ bool ModelImage::releaseTrainImage()
     return !imgLoaded;
 }
 
+
+Mat & ModelImage::getTrainImage(){
+    return imgdata;
+}
+
 Mat ModelImage::show(int l, int pId, bool showInWin, int highLight)
 {
     Mat mb;
     if (imgdata.channels()==1)
-        cv::cvtColor(imgdata, mb, CV_GRAY2RGB);
+        cv::cvtColor(imgdata, mb, cv::COLOR_GRAY2RGB);
     else
         mb = imgdata.clone();
 
@@ -134,7 +182,7 @@ Mat ModelImage::show(int l, int pId, bool showInWin, int highLight)
 //                        1, CV_AA);
 //     }
     if (showInWin){
-        cvNamedWindow("hoho", CV_WINDOW_AUTOSIZE);
+        cv::namedWindow("hoho", cv::WINDOW_AUTOSIZE);
         cv::imshow("hoho", mb);
 
         printf("Press any key to continue...\n");

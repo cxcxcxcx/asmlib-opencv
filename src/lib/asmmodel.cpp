@@ -45,7 +45,7 @@ void ASMModel::buildLocalDiffStructure()
                 m.copyTo(datMat.col(j));
             }
             cv::calcCovarMatrix(datMat, *tCovar, *tMean,
-                                CV_COVAR_NORMAL|CV_COVAR_COLS);
+                                cv::COVAR_NORMAL|cv::COVAR_COLS);
             *tCovar = tCovar->inv(cv::DECOMP_SVD);
             this->iCovarG[l].push_back(*tCovar);
             this->meanG[l].push_back(*tMean);
@@ -186,7 +186,7 @@ void ASMModel::showResult(Mat& img, const vector< ASMFitResult >& res)
 {
     Mat mb;
     if (img.channels()==1)
-        cv::cvtColor(img, mb, CV_GRAY2RGB);
+        cv::cvtColor(img, mb, cv::COLOR_GRAY2RGB);
     else
         mb = img.clone();
 
@@ -207,7 +207,7 @@ ASMFitResult ASMModel::fit(const cv::Mat& img, int verbose)
     // Step 2: Ensure it is a grayscale image
     Mat grayImg;
     if (img.channels() == 3){
-        cv::cvtColor(img, grayImg, CV_BGR2GRAY);
+        cv::cvtColor(img, grayImg, cv::COLOR_BGR2GRAY);
     }
     else
         grayImg = img;

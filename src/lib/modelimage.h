@@ -2,8 +2,8 @@
 #define MODELIMAGE_H
 #include <string>
 #include <vector>
-#include "cv.h"
-#include "highgui.h"
+#include "opencv2/opencv.hpp"
+//#include "highgui.h"
 #include "shapevec.h"
 #include "shapeinfo.h"
 using std::string;
@@ -55,8 +55,8 @@ public:
     /// Release Training Image
     bool releaseTrainImage();
 
-//     //! Get the image saved at specified level
-//     Mat & getTrainImage(int level=0, bool gray=false);
+    //! Get the image saved.
+    Mat & getTrainImage();
 
     /// Host image (if any).
     inline const string &HostImage() const { return hostImageName; }
@@ -81,6 +81,10 @@ public:
     Mat show(int level = 0, int pId = -1, bool showInWin = true, int highLight = 0);
 
     ModelImage();
+
+private:
+    bool tryReadIBugPts(const char* filename);
+    bool tryReadOldPts(const char* filename);
 };
 
 } // Namespace

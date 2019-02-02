@@ -44,13 +44,13 @@ Mat ShapeInfo::drawMarkPointsOnImg(
         mb = img.clone();
 
     for (uint i=0;i<vP.size();i++){
-        cv::circle(mb, vP[i], 3, cv::Scalar(25, 50, 255), 1, CV_AA);
+        cv::circle(mb, vP[i], 3, cv::Scalar(25, 50, 255), 1, cv::LINE_AA);
     }
     for (int i=0;i<nContours;i++){
         for (int j=contourStartInd[i]; j<contourStartInd[i+1]; j++){
             cv::line(mb, vP[pointInfo[j].connectFrom],
                      vP[j],
-                     cv::Scalar(200, 30, 80), 1, CV_AA);
+                     cv::Scalar(200, 30, 80), 1, cv::LINE_AA);
         }
     }
     return mb;

@@ -20,65 +20,12 @@
 #include <cstdio>
 #include <iostream>
 #include <fstream>
-#include "cv.h"
+#include "opencv2/opencv.hpp"
 using cv::PCA;
 using cv::Mat_;
-using std::cin;
-using std::cout;
 using std::endl;
-using std::fstream;
 
 namespace StatModel {
-// class ModelFile
-// {
-//     public:
-//         virtual void writeInt(int i){ fwrite(&i, sizeof(int), 1, fp); }
-//         virtual int readInt(int &i) { fread(&i, sizeof(int), 1, fp); return i; }
-//
-//         virtual void writeBool(bool b){ fwrite(&b, sizeof(bool), 1, fp); }
-//         virtual int readBool(bool &b) { fread(&b, sizeof(bool), 1, fp); return b; }
-//
-//         virtual void writeReal(double d) { fwrite(&d, sizeof(double), 1, fp); }
-//         virtual double readReal(double &d) { fread(&d, sizeof(double), 1, fp); return d; }
-//
-//         void writePCA(const PCA *p);
-//         PCA * readPCA(PCA * &p);
-//
-//         template < class T >
-//         virtual void writeMat(const Mat_<T> &m){
-//             writeInt(m.rows);
-//             writeInt(m.cols);
-//             for (int i=0;i<m.rows;i++)
-//                 for (int j=0;j<m.cols;j++)
-//                     fwrite(&(m(i, j)), sizeof(T), 1, fp);
-//         }
-//
-//         template < class T >
-//         Mat_<T> & readMat(Mat_<T> &m){
-//             int r,c;
-//             readInt(r);
-//             readInt(c);
-//             m.create(r, c);
-//             for (int i=0;i<r;i++)
-//                 for (int j=0;j<c;j++)
-//                     fread(&(m(i,j)), sizeof(T), 1, fp);
-//             return m;
-//         }
-//
-//         void openFile(const char *fName, const char *mode){
-//             fp=fopen(fName, mode);
-//             if (fp==NULL){
-//                 printf("Model file %s not found!!\n", fName);
-//                 throw("Model file %s not found!!");
-//             }
-//         }
-//         void closeFile(){ fclose(fp); fp=NULL; }
-//
-//         ModelFile(){ fp = NULL; }
-//         ~ModelFile(){ if (fp!=NULL) fclose(fp); }
-//     private:
-//         FILE *fp;
-// };
 
 //! Save/Load model to/from a file.
 class ModelFile
@@ -133,7 +80,7 @@ class ModelFile
         //ModelFile(){  }
         ~ModelFile(){ if (fs) fs.close(); }
     private:
-        fstream fs;
+        std::fstream fs;
 };
 
 typedef ModelFile ModelFileAscii;

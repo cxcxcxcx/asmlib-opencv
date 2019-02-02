@@ -1,7 +1,7 @@
 #ifndef ASMMODEL_H
 #define ASMMODEL_H
 
-#include "cv.h"
+#include "opencv2/opencv.hpp"
 #include "featureextracter.h"
 #include "feature_extracter_normline_noscaling.h"
 #include "shapemodel.h"

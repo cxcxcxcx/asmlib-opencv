@@ -7,7 +7,7 @@ bool FeatureExtracter::loadImage(const Mat& imgdata)
     cv::buildPyramid(imgdata, this->imgPyramid, 3);
     Mat grayImg;
     if (imgdata.channels() == 3){
-        cv::cvtColor(imgdata, grayImg, CV_BGR2GRAY);
+        cv::cvtColor(imgdata, grayImg, cv::COLOR_BGR2GRAY);
         imgPyrGray.resize(4);
         cv::buildPyramid(grayImg, imgPyrGray, 3);
     }
@@ -48,7 +48,7 @@ Point2d FeatureExtracter::getNormDirection(
     Point2d va, vb, vDirection;
     va = points[shapeInfo_->pointInfo[pointId].connectFrom] - points[pointId];
     vb = points[shapeInfo_->pointInfo[pointId].connectTo] - points[pointId];
-    
+
     // TODO: Clean the codes here.
     double td;
     td = norm(va);
